@@ -62,14 +62,14 @@ Verify partitions, use lsblk or fdisk again:
 Perform a secure disk erasure
 -----------------------------
 OPAL PSID is usually written on SSD. Look on bottom of Samsung 990 Pro with 
-Heatsink.
+Heatsink. This will reset the OPAL password if it hasn't been set.
 
 	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
 
 Encrypt ssd, format and mount partitions
 ----------------------------------------
 Create and mount the encrypted root partition. The passphrase will be wiped 
-later, so it's ok to use a blank one. However, You need to remember the 
+later, so it's ok to use a blank one. However, you need to remember the 
 OPAL Admin password that you set.
 
 	cryptsetup -v luksFormat --hw-opal-only /dev/nvme0n1p2
