@@ -1,5 +1,9 @@
-Arch with encrypted root, Secure Boot, and TPM2
-===============================================
+Arch Install with Encrypted Root, Secure Boot, and TPM2
+=======================================================
+
+Before booting, you may need your OPAL PSID. This is usually written on 
+the SSD. (E.G. Look on bottom of Samsung 990 Pro with Heatsink.) Take a
+picture with your phone of the PSID for your records.
 
 Verify the boot mode
 --------------------
@@ -9,7 +13,9 @@ To verify the boot mode, check the UEFI bitness (should be 64):
 
 Connect to the internet
 -----------------------
-	iwctl --passphrase PASSWORD station wlan0 connect SSID
+	iwctl --passphrase PASSPHRASE station wlan0 connect SSID
+
+Make sure connected by running (press Ctrl-c to stop)ls
 	ping archlinux.org
 
 Update the system clock
@@ -20,6 +26,7 @@ Partition the disks
 -------------------
 To identify these devices, use lsblk or fdisk:
 
+	lsblk
 	fdisk -l
 
 Use a partitioning tool like fdisk to modify partition tables:
@@ -30,16 +37,40 @@ Create table:
 
 * g - Create a new GPT partition table
 * n - Create new partition (EFI)
-    - Accept default partition number
+    - Accept default partition number 1
     - Accept default first sector
-    - Enter "+4G" for size
+    - Enter "+4G" for last sector
+* t - Change partition type
+    - Partition 1 selected automatically
+    - L to list all
+    - q to exit back to partition type prompt
+    - 1 EFI System
 * n - Create new partition (Linux filesystem)
     - Accept defaults to use the remaining space
+* t - Change partition type
+    - Choose partition 2 or press enter
+    - L to list all
+    - q to exit back to partition type prompt 	
+    - 23 Linux root (x86-64)
 * w - Write changes and exit
+
+Verify partitions, use lsblk or fdisk again:
+
+	lsblk
+	fdisk -l
+
+Perform a secure disk erasure
+-----------------------------
+OPAL PSID is usually written on SSD. Look on bottom of Samsung 990 Pro with 
+Heatsink.
+
+	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
 
 Encrypt ssd, format and mount partitions
 ----------------------------------------
-Create and mount the encrypted root partition:
+Create and mount the encrypted root partition. The passphrase will be wiped 
+later, so it's ok to use a blank one. However, You need to remember the 
+OPAL Admin password that you set.
 
 	cryptsetup -v luksFormat --hw-opal-only /dev/nvme0n1p2
 	cryptsetup open /dev/nvme0n1p2 root
@@ -71,20 +102,22 @@ Enter the new system environment
 --------------------------------
 	arch-chroot /mnt
 
-Setup initial settings
-----------------------
-	systemd-firstboot --prompt
+Time
+----
+Set time zone:
 
-Syncronize real-time clock
---------------------------
+	ln -sf "/usr/share/zoneinfo/$(tzselect)" /etc/localtime
+
+Syncronize real-time clock:
+
 	hwclock -w
 
-Add NTP servers
----------------
+Add NTP servers:
+
 	mkdir /etc/systemd/timesyncd.conf.d/
 	nano /etc/systemd/timesyncd.conf.d/01_ntp.conf
 
-Contents:
+Example contents:
 
 	[Time]
 	NTP=0.us.pool.ntp.org 1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org
@@ -92,17 +125,35 @@ Contents:
 
 Localization
 ------------
-Edit locale.gen to uncomment value of $LANG
+Use `less /etc/local.gen` to see available options. Uncomment lines with
+locales en_US.UTF-8 and others in locale.gen
 
-	sed -i "/$LANG/s/^#//" /etc/locale.gen
+	sed -i "/en_US.UTF-8/s/^#//" /etc/locale.gen
+	sed -i "/es_US.UTF-8/s/^#//" /etc/locale.gen
 
-Generate locale:
+Generate locales:
 
 	locale-gen
+	
+Set locale config:
+
+	echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+
+Network
+-------
+Set hostname:
+
+	echo 'COMPUTERNAME' > /etc/hostname
+
+Add Wifi connection:
+
+	nmcli con add type wifi ssid SSID \
+	wifi-sec.key wpa-psk wifi-sec.psk PASSPHRASE \
+	con.id "NETWORKNAME" con.mdns yes con.zone FIREWALLDZONE
 
 Mouse support
 -------------
-(use `gpm -m /dev/input/mice -t help` to list supported mice)
+Use `gpm -t help` to list supported mice. For example for Logitec mice:
 
 	gpm -m /dev/input/mice -t logim
 
@@ -138,12 +189,6 @@ Contents:
 	[Install]
 	WantedBy=swap.target
 
-Wifi setup
-----------
-	nmcli con add type wifi ssid SSID \
-	wifi-sec.key wpa-psk wifi-sec.psk PASSWORD \
-	con.id "NETWORKNAME" con.mdns yes con.zone FIREWALLDZONE
-
 Enable services
 ---------------
 	systemctl enable firewalld.service
@@ -156,8 +201,7 @@ Enable services
 Configure mkinitcpio
 --------------------
 	mkdir /etc/mkinitcpio.conf.d/
-	sed '/^HOOKS/p' /etc/mkinitcpio.conf \
-    > /etc/mkinitcpio.conf.d/01_hooks.conf
+	grep "^HOOKS" /etc/mkinitcpio.conf > /etc/mkinitcpio.conf.d/01_hooks.conf
 	nano /etc/mkinitcpio.conf.d/01_hooks.conf
 
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and 
@@ -178,6 +222,15 @@ Enable updates when bootloader updated.
 Regenerate initial ramdisk
 --------------------------
 	mkinitcpio -P
+
+Set Root password
+-----------------
+	passwd
+	
+Make a new user
+---------------
+	useradd -m -G wheel USERNAME
+	passwd USERNAME
 
 Reboot
 ------
@@ -236,11 +289,6 @@ Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive.
 	systemd-cryptenroll /dev/nvme0n1p2 \
 	--wipe-slot=empty --tpm2-device=auto --tpm2-pcrs=7
 
-Make a new user
----------------
-	useradd -m -G wheel <username>
-	passwd <username>
-
 Reboot
 ------
 	reboot
@@ -248,9 +296,14 @@ Reboot
 Tips
 ====
 
-* BASH/nano defaults
+* BASH defaults
     - Ctrl-k = cut to end of line
-    - Ctrl-Y = paste
+    - Ctrl-y = paste
+
+* Nano defaults
+    - Alt-A = start selecting text
+    - Ctrl-k = cut selection or line if no selection
+    - Ctrl-u = paste
 
 * This uncomments all:
 
