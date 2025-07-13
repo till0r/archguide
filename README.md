@@ -154,13 +154,10 @@ Set locale config:
 
 Network
 -------
-Set hostname:
-
 	echo 'COMPUTERNAME' > /etc/hostname
 
 Sudo setup
 ----------
-    mkdir /etc/sudoers.d/
     EDITOR=nano visudo -f /etc/sudoers.d/01_config
 
 Contents:
