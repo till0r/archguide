@@ -158,11 +158,7 @@ Set hostname:
 
 	echo 'COMPUTERNAME' > /etc/hostname
 
-Add Wifi connection:
 
-	nmcli con add type wifi ssid SSID \
-	wifi-sec.key wpa-psk wifi-sec.psk PASSPHRASE \
-	con.id "NETWORKNAME" con.mdns yes con.zone FIREWALLDZONE
 
 Mouse support
 -------------
@@ -253,6 +249,19 @@ Remove installation media before booting.
 	swapoff /mnt/swapfile
 	umount -a
 	reboot
+
+Setup Wifi connection
+---------------------
+To setup without connecting until next boot, use the following:
+
+	nmcli con add type wifi ssid SSID \
+	wifi-sec.key wpa-psk wifi-sec.psk PASSPHRASE \
+	con.id NAME con.mdns yes con.zone FIREWALLDZONE
+
+To setup and connect right now, use:
+
+	nmcli device wifi connect SSID password PASSPHRASE
+	nmcli con modify SSID con.zone FIREWALLDZONE con.mdns yes
 
 Secure Boot
 -----------
