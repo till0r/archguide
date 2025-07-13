@@ -109,7 +109,7 @@ Format and mount EFI Partition:
 
 Install essential packages
 --------------------------
-	pacstrap /mnt base linux linux-firmware \
+	pacstrap -K /mnt base linux linux-firmware \
  	alsa-utils firewalld gpm intel-ucode \
   	man-db man-pages nano networkmanager \
    	sbctl sudo tpm2-tss
