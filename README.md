@@ -141,8 +141,8 @@ Localization
 Use `less /etc/local.gen` to see available options. Uncomment lines with
 locales en_US.UTF-8 and others in locale.gen
 
-	sed -i "/en_US.UTF-8/s/^#//" /etc/locale.gen
-	sed -i "/es_US.UTF-8/s/^#//" /etc/locale.gen
+	sed -i '/en_US.UTF-8/s/^#//' /etc/locale.gen
+	sed -i '/es_US.UTF-8/s/^#//' /etc/locale.gen
 
 Generate locales:
 
