@@ -158,14 +158,6 @@ Set hostname:
 
 	echo 'COMPUTERNAME' > /etc/hostname
 
-
-
-Mouse support
--------------
-Use `gpm -t help` to list supported mice. For example for Logitec mice:
-
-	gpm -m /dev/input/mice -t logim
-
 Sudo setup
 ----------
     mkdir /etc/sudoers.d/
@@ -250,19 +242,6 @@ Remove installation media before booting.
 	umount -a
 	reboot
 
-Setup Wifi connection
----------------------
-To setup without connecting until next boot, use the following:
-
-	nmcli con add type wifi ssid SSID \
-	wifi-sec.key wpa-psk wifi-sec.psk PASSPHRASE \
-	con.id NAME con.mdns yes con.zone FIREWALLDZONE
-
-To setup and connect right now, use:
-
-	nmcli device wifi connect SSID password PASSPHRASE
-	nmcli con modify SSID con.zone FIREWALLDZONE con.mdns yes
-
 Secure Boot
 -----------
 Before starting, goto BIOS/UEFI put Secure Boot into Setup mode.
@@ -314,6 +293,26 @@ Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive.
 Reboot
 ------
 	reboot
+
+Wifi connection
+---------------
+To setup without connecting until next boot, use the following:
+
+	nmcli con add type wifi ssid SSID \
+	wifi-sec.key wpa-psk wifi-sec.psk PASSPHRASE \
+	con.id NAME con.mdns yes con.zone FIREWALLDZONE
+
+To setup and connect right now, use:
+
+	nmcli device wifi connect SSID password PASSPHRASE
+	nmcli con modify SSID con.zone FIREWALLDZONE con.mdns yes
+
+Mouse support
+-------------
+Use `gpm -t help` to list supported mice. For example for Logitec mice:
+
+	gpm -m /dev/input/mice -t logim
+
 
 Tips
 ====
