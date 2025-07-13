@@ -1,9 +1,10 @@
 Arch Install with Encrypted Root, Secure Boot, and TPM2
 =======================================================
 
-Before booting, you may need your OPAL PSID. This is usually written on 
-the SSD. (E.G. Look on bottom of Samsung 990 Pro with Heatsink.) Take a
-picture with your phone of the PSID for your records.
+Before booting, you may need your OPAL PSID to factory reset the SSD. 
+This is usually written on the SSD. (E.G. Look on bottom of Samsung 990
+Pro with Heatsink.) Take a picture with your phone of the PSID for your 
+records.
 
 Verify the boot mode
 --------------------
@@ -22,13 +23,32 @@ Update the system clock
 -----------------------
 	timedatectl
 
-Partition the disks
--------------------
+Identify the SSD
+----------------
 To identify these devices, use lsblk or fdisk:
-
 	lsblk
 	fdisk -l
 
+Perform a secure disk erasure
+-----------------------------
+SSDs with encryption are always encrypting their data even with no password
+user password set. In this way, hardware encryption is "free" performance-wise
+(though the implementation might still be vulnerable to hacking). 
+
+If you don't know your SSD's OPAL Admin password, or if one was never set on a
+new device, you should perform a secure disk erasure. The computer's 
+firmware/UEFI/BIOS can sometimes help you set the Admin Password too. (Look 
+under Security.)
+
+To perform a factory reset/secure erasure, you'll need the OPAL PSID. The 
+PSID is usually written on SSD. (Look on bottom of Samsung 990 Pro with 
+Heatsink, for example). Don't foreget, resetting the device will reset
+the OPAL password if it's set.
+
+	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
+
+Partition the disks
+-------------------
 Use a partitioning tool like fdisk to modify partition tables:
 
 	fdisk /dev/nvme0n1
@@ -58,13 +78,6 @@ Verify partitions, use lsblk or fdisk again:
 
 	lsblk
 	fdisk -l
-
-Perform a secure disk erasure
------------------------------
-OPAL PSID is usually written on SSD. Look on bottom of Samsung 990 Pro with 
-Heatsink. This will reset the OPAL password if it hasn't been set.
-
-	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
 
 Encrypt ssd, format and mount partitions
 ----------------------------------------
