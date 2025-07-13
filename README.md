@@ -314,7 +314,7 @@ Tips
     - Ctrl-y = paste
 
 * Nano defaults
-    - Alt-A = start selecting text
+    - Alt-Shift-A = start selecting text
     - Ctrl-k = cut selection or line if no selection
     - Ctrl-u = paste
 
