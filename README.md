@@ -16,7 +16,8 @@ Connect to the internet
 -----------------------
 	iwctl --passphrase PASSPHRASE station wlan0 connect SSID
 
-Make sure connected by running (press Ctrl-c to stop)ls
+Make sure connected by running (press Ctrl-c to stop):
+
 	ping archlinux.org
 
 Update the system clock
