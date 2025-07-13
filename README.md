@@ -26,6 +26,7 @@ Update the system clock
 Identify the SSD
 ----------------
 To identify these devices, use lsblk or fdisk:
+
 	lsblk
 	fdisk -l
 
