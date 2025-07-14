@@ -177,7 +177,7 @@ Swapfile (16GB)
 
 Add to systemd:
 
-	systemctl -fl edit swapfile.swap
+	nano /etc/systemd/system/swapfile.swap
 
 Contents:
 
