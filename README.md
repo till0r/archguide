@@ -227,6 +227,10 @@ Uncomment uki and comment image entries, replace start of path with `/boot`:
 	fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"
 	fallback_options="-S autodetect"
 
+Create /etc/vconsole.conf
+
+	touch /etc/vconsole.conf
+
 Install & Configure systemd-boot
 --------------------------------
 Install systemd-boot on the EFI partition:
