@@ -210,7 +210,7 @@ Edit Preset file:
 
 	nano /etc/mkinitcpio.d/linux.preset
 
-Uncomment uki and comment image entries, replace start of path with esp:
+Uncomment uki and comment image entries, replace start of path with `/boot`:
 
 	#ALL_config="/etc/mkinitcpio.conf"
 	ALL_kver="/boot/vmlinuz-linux"
@@ -219,12 +219,12 @@ Uncomment uki and comment image entries, replace start of path with esp:
 	
 	#default_config="/etc/mkinitcpio.conf"
 	#default_image="/boot/initramfs-linux.img"
-	default_uki="esp/EFI/Linux/arch-linux.efi"
+	default_uki="/boot/EFI/Linux/arch-linux.efi"
 	#default_options="--splash=/usr/share/systemd/bootctl/splash-arch.bmp"
 	
 	#fallback_config="/etc/mkinitcpio.conf"
 	#fallback_image="/boot/initramfs-linux-fallback.img"
-	fallback_uki="esp/EFI/Linux/arch-linux-fallback.efi"
+	fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"
 	fallback_options="-S autodetect"
 
 Install & Configure systemd-boot
@@ -233,9 +233,31 @@ Install systemd-boot on the EFI partition:
 
 	bootctl install
 
-Enable updates when bootloader updated.
+Enable updates when bootloader updated:
 
 	systemctl enable systemd-boot-update.service
+
+Edit configuration:
+
+	nano /boot/loader/loader.conf
+
+ Contents:
+
+ 	default @saved
+  	timeout 5
+   	console-mode auto
+    	editor no
+
+Add loader for OS:
+
+	nano /boot/loader/entries/arch.conf
+
+ Contents (note vmlinuz is not a typo):
+
+	title   Arch Linux
+	linux   /vmlinuz-linux
+	initrd  /intel-ucode.img
+	initrd  /initramfs-linux.img
 
 Regenerate initial ramdisk
 --------------------------
