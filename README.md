@@ -198,7 +198,6 @@ Enable services
 
 Configure mkinitcpio
 --------------------
-	mkdir /etc/mkinitcpio.conf.d/
 	grep "^HOOKS" /etc/mkinitcpio.conf > /etc/mkinitcpio.conf.d/01_hooks.conf
 	nano /etc/mkinitcpio.conf.d/01_hooks.conf
 
