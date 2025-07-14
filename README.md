@@ -6,33 +6,34 @@ This is usually written on the SSD. (E.G. Look on bottom of Samsung 990
 Pro with Heatsink.) Take a picture with your phone of the PSID for your 
 records.
 
-Verify the boot mode
---------------------
+Configure install envionment
+----------------------------
+
+### Verify the boot mode
 To verify the boot mode, check the UEFI bitness (should be 64):
 
 	cat /sys/firmware/efi/fw_platform_size
 
-Connect to the internet
------------------------
+### Connect to the internet
 	iwctl --passphrase PASSPHRASE station wlan0 connect SSID
 
 Make sure connected by running (press Ctrl-c to stop):
 
 	ping archlinux.org
 
-Update the system clock
------------------------
+### Update the system clock
 	timedatectl
 
-Identify the SSD
-----------------
+Configure the SSD
+-----------------
+
+### Identify the SSD
 To identify these devices, use lsblk or fdisk:
 
 	lsblk
 	fdisk -l
 
-Perform a secure disk erasure
------------------------------
+### Perform a secure disk erasure
 SSDs with encryption are always encrypting their data even with no password
 user password set. In this way, hardware encryption is "free" performance-wise
 (though the implementation might still be vulnerable to hacking). 
@@ -49,8 +50,7 @@ the OPAL password if it's set.
 
 	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
 
-Partition the disks
--------------------
+### Partition the disks
 Use a partitioning tool like fdisk to modify partition tables:
 
 	fdisk /dev/nvme0n1
@@ -81,8 +81,7 @@ Verify partitions, use lsblk or fdisk again:
 	lsblk
 	fdisk -l
 
-Encrypt ssd, format and mount partitions
-----------------------------------------
+### Encrypt ssd, format and mount partitions
 Create and mount the encrypted root partition. The passphrase will be wiped 
 later, so it's ok to use a blank one. However, you need to remember the 
 OPAL Admin password that you set.
@@ -115,8 +114,7 @@ Enter the new system environment
 --------------------------------
 	arch-chroot /mnt
 
-Time
-----
+### Time
 Set time zone:
 
 	ln -sf "/usr/share/zoneinfo/$(tzselect)" /etc/localtime
@@ -136,8 +134,7 @@ Example contents:
 	NTP=0.us.pool.ntp.org 1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org
 	FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
 
-Localization
-------------
+### Localization
 Use `less /etc/local.gen` to see available options. Uncomment lines with
 locales en_US.UTF-8 and others in locale.gen
 
@@ -152,12 +149,10 @@ Set locale config:
 
 	echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 
-Network
--------
+### Network
 	echo 'COMPUTERNAME' > /etc/hostname
 
-Sudo setup
-----------
+### Sudo setup
     EDITOR=nano visudo -f /etc/sudoers.d/01_config
 
 Contents:
@@ -168,8 +163,7 @@ Contents:
 	Defaults umask = 0022
 	Defaults umask_override
 
-Swapfile (16GB)
----------------
+### Swapfile (16GB)
 	fallocate -l 16GB /swapfile
 	chmod 600 /swapfile
 	mkswap /swapfile
@@ -186,15 +180,6 @@ Contents:
 	
 	[Install]
 	WantedBy=swap.target
-
-Enable services
----------------
-	systemctl enable firewalld.service
-	systemctl enable gpm.service
-	systemctl enable NetworkManager.service
-	systemctl enable swapfile.swap
-	systemctl enable systemd-resolved.service
-	systemctl enable systemd-timesyncd.service
 
 Configure mkinitcpio for unified kernal images with necessary hooks
 -------------------------------------------------------------------
@@ -237,23 +222,30 @@ Install systemd-boot on the EFI partition:
 
 	bootctl install
 
-Enable updates when bootloader updated:
-
-	systemctl enable systemd-boot-update.service
-
 Regenerate initial ramdisk
 --------------------------
 	mkinitcpio -P
 
-Set Root password
------------------
+Setup users
+-----------
+
+### Set Root password
 	passwd
 	
-Make a new user
----------------
+### Make a new user
 	useradd -m -G wheel USERNAME
 	passwd USERNAME
 
+Enable services
+---------------
+	systemctl enable firewalld.service
+	systemctl enable gpm.service
+	systemctl enable NetworkManager.service
+	systemctl enable swapfile.swap
+	systemctl enable systemd-boot-update.service
+	systemctl enable systemd-resolved.service
+	systemctl enable systemd-timesyncd.service
+ 
 Reboot
 ------
 Remove installation media before booting.
@@ -321,8 +313,10 @@ Reboot
 ------
 	reboot
 
-Wifi connection
----------------
+Configure new system
+--------------------
+
+### Wifi connection
 To setup without connecting until next boot, use the following:
 
 	nmcli con add type wifi ssid SSID \
@@ -334,8 +328,7 @@ To setup and connect right now, use:
 	nmcli device wifi connect SSID password PASSPHRASE
 	nmcli con modify SSID con.zone FIREWALLDZONE con.mdns yes
 
-Mouse support
--------------
+### Mouse support
 Use `gpm -t help` to list supported mice. For example for Logitec mice:
 
 	gpm -m /dev/input/mice -t logim
@@ -343,6 +336,8 @@ Use `gpm -t help` to list supported mice. For example for Logitec mice:
 Tips
 ====
 
+Keyboard shortcuts
+------------------
 * BASH defaults
     - Ctrl-k = cut to end of line
     - Ctrl-y = paste
@@ -352,6 +347,8 @@ Tips
     - Ctrl-k = cut selection or line if no selection
     - Ctrl-u = paste
 
+BASH tips
+---------
 * This uncomments all:
 
 		sed '/PATTERN/s/^#//g' -i FILE
@@ -368,14 +365,12 @@ Tips
     - "text" interprets $VARS \escapes \`tics\` and !history
 
 Checks
-======
+------
 
-Check Internet Connection
--------------------------
+### Check Internet Connection
     ping archlinux.org
 
-Check Microcode
----------------
+### Check Microcode
 Microcode & CPU Family/Model/Stepping:
 
     journalctl -k --grep='CPU0:|microcode:'
@@ -391,21 +386,19 @@ is in the output of:
 
     lsinitcpio --early /boot/initramfs-linux.img | grep microcode
 
-Check Sound
------------
+### Check Sound
     speaker-test -c 2
 
-Ways to check if swap file is used
-----------------------------------
+### Check Swap file
+
+#### Ways to check if swap file is used
     swapon --show
     cat /proc/swaps
 
-Ways to check if swap in memory
--------------------------------
+#### Ways to check if swap in memory
     vmstat
     free
     cat /proc/meminfo
 
-Check Time/Date status
-----------------------
+### Check Time/Date status
     timedatectl
