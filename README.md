@@ -235,7 +235,7 @@ Install systemd-boot on the EFI partition:
 
 Enable updates when bootloader updated.
 
-	bootctl --no-variables --graceful update
+	systemctl enable systemd-boot-update.service
 
 Regenerate initial ramdisk
 --------------------------
