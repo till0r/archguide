@@ -243,10 +243,10 @@ Edit configuration:
 
  Contents:
 
- 	default @saved
-  	timeout 5
-   	console-mode auto
-    	editor no
+	default @saved
+	timeout 5
+	console-mode auto
+	editor no
 
 Add loader for OS:
 
