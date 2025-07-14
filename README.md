@@ -196,8 +196,8 @@ Enable services
 	systemctl enable systemd-resolved.service
 	systemctl enable systemd-timesyncd.service
 
-Configure mkinitcpio
---------------------
+Configure mkinitcpio for unified kernal images with necessary hooks
+-------------------------------------------------------------------
 	grep "^HOOKS" /etc/mkinitcpio.conf > /etc/mkinitcpio.conf.d/01_hooks.conf
 	nano /etc/mkinitcpio.conf.d/01_hooks.conf
 
@@ -205,6 +205,27 @@ NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and
 sd-encrypt hooks. Example:
 
 	HOOKS=(base systemd keyboard autodetect microcode modconf kms sd-vconsole block sd-encrypt filesystems fsck)
+
+Edit Preset file:
+
+	nano /etc/mkinitcpio.d/linux.preset
+
+Uncomment uki and comment image entries, replace start of path with esp:
+
+	#ALL_config="/etc/mkinitcpio.conf"
+	ALL_kver="/boot/vmlinuz-linux"
+	
+	PRESETS=('default' 'fallback')
+	
+	#default_config="/etc/mkinitcpio.conf"
+	#default_image="/boot/initramfs-linux.img"
+	default_uki="esp/EFI/Linux/arch-linux.efi"
+	#default_options="--splash=/usr/share/systemd/bootctl/splash-arch.bmp"
+	
+	#fallback_config="/etc/mkinitcpio.conf"
+	#fallback_image="/boot/initramfs-linux-fallback.img"
+	fallback_uki="esp/EFI/Linux/arch-linux-fallback.efi"
+	fallback_options="-S autodetect"
 
 Install & Configure systemd-boot
 --------------------------------
