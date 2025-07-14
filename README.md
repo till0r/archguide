@@ -219,12 +219,12 @@ Uncomment uki and comment image entries, replace start of path with `/boot`:
 	
 	#default_config="/etc/mkinitcpio.conf"
 	#default_image="/boot/initramfs-linux.img"
-	default_uki="/boot/EFI/Linux/arch-linux.efi"
+	default_uki="boot/EFI/Linux/arch-linux.efi"
 	#default_options="--splash=/usr/share/systemd/bootctl/splash-arch.bmp"
 	
 	#fallback_config="/etc/mkinitcpio.conf"
 	#fallback_image="/boot/initramfs-linux-fallback.img"
-	fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"
+	fallback_uki="boot/EFI/Linux/arch-linux-fallback.efi"
 	fallback_options="-S autodetect"
 
 Create /etc/vconsole.conf
@@ -240,28 +240,6 @@ Install systemd-boot on the EFI partition:
 Enable updates when bootloader updated:
 
 	systemctl enable systemd-boot-update.service
-
-Edit configuration:
-
-	nano /boot/loader/loader.conf
-
- Contents:
-
-	default @saved
-	timeout 5
-	console-mode auto
-	editor no
-
-Add loader for OS:
-
-	nano /boot/loader/entries/arch.conf
-
- Contents (note vmlinuz is not a typo):
-
-	title   Arch Linux
-	linux   /vmlinuz-linux
-	initrd  /intel-ucode.img
-	initrd  /initramfs-linux.img
 
 Regenerate initial ramdisk
 --------------------------
@@ -310,6 +288,13 @@ Sign all unsigned keys:
 
 	sbctl sign -s /boot/vmlinuz-linux
 	sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
+	sbctl sign -s /boot/EFI/Linux/arch-linux-fallback.efi
+	sbctl sign -s /boot/EFI/Linux/arch-linux.efi
+	sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
+
+ Verify no more files
+ 
+	sbctl verify
 
 Tip: If a lot of files need verified, use following:
 
@@ -324,14 +309,13 @@ systemd, or boot loader updated:
 
 Enroll TPM
 ----------
-Create recovery key.
+Create recovery key. Copy it to a USB drive.
 
 	systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
 
 Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive.
 
-	systemd-cryptenroll /dev/nvme0n1p2 \
-	--wipe-slot=empty --tpm2-device=auto --tpm2-pcrs=7
+	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto 
 
 Reboot
 ------
@@ -355,7 +339,6 @@ Mouse support
 Use `gpm -t help` to list supported mice. For example for Logitec mice:
 
 	gpm -m /dev/input/mice -t logim
-
 
 Tips
 ====
