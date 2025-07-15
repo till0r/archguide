@@ -193,7 +193,7 @@ Configure mkinitcpio for unified kernal images with necessary hooks
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and 
 sd-encrypt hooks. Example:
 
-	HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
+	HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole keymap consolefont block sd-encrypt filesystems fsck)
 
 Edit Preset file:
 
@@ -208,12 +208,12 @@ Uncomment uki and comment image entries, replace start of path with `/boot`:
 	
 	#default_config="/etc/mkinitcpio.conf"
 	#default_image="/boot/initramfs-linux.img"
-	default_uki="boot/EFI/Linux/arch-linux.efi"
+	default_uki="/boot/EFI/Linux/arch-linux.efi"
 	#default_options="--splash=/usr/share/systemd/bootctl/splash-arch.bmp"
 	
 	#fallback_config="/etc/mkinitcpio.conf"
 	#fallback_image="/boot/initramfs-linux-fallback.img"
-	fallback_uki="boot/EFI/Linux/arch-linux-fallback.efi"
+	fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"
 	fallback_options="-S autodetect"
 
 Create /etc/vconsole.conf
@@ -242,13 +242,13 @@ Setup users
 
 Enable services
 ---------------
-	systemctl enable firewalld.service
-	systemctl enable gpm.service
-	systemctl enable NetworkManager.service
+	systemctl enable firewalld
+	systemctl enable gpm
+	systemctl enable NetworkManager
 	systemctl enable swapfile.swap
-	systemctl enable systemd-boot-update.service
-	systemctl enable systemd-resolved.service
-	systemctl enable systemd-timesyncd.service
+	systemctl enable systemd-boot-update
+	systemctl enable systemd-resolved
+	systemctl enable systemd-timesyncd
  
 Reboot
 ------
