@@ -256,7 +256,9 @@ Remove installation media before booting.
 
 Secure Boot
 -----------
-Before starting, goto BIOS/UEFI put Secure Boot into Setup mode.
+Before starting, goto BIOS/UEFI put Secure Boot into Setup Mode. On some 
+computers (like the GMKtec G3 Plus), you need to set an administrator
+password for the BIOS/UEFI in order for Setup Mode to be available.
 Check secure boot status:
 
 	sbctl status
