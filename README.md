@@ -159,9 +159,14 @@ Contents:
 
 	%wheel ALL=(ALL:ALL) ALL
 	Defaults editor=/usr/bin/rnano
-	Defaults pwfeedback
-	Defaults umask = 0022
+	Defaults umask=0022
 	Defaults umask_override
+
+If you made a mistake, when you exit nano then you'll get a message like
+
+	What now?
+
+In that case, type `e` to go back and fix your mistake.
 
 ### Swapfile (16GB)
 	fallocate -l 16GB /swapfile
