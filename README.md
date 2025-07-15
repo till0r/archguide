@@ -285,20 +285,21 @@ Sign all unsigned keys:
 	sbctl sign -s /boot/EFI/Linux/arch-linux.efi
 	sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
 
+Tip: If a lot of files need verified, use following:
+
+	sbctl verify 2> /dev/null | \
+ 	sed -n $'s/\u2717 /sbctl sign -s / ; s/ is not signed$//e'
+
  Verify no more files
  
 	sbctl verify
-
-Tip: If a lot of files need verified, use following:
-
-	sbctl verify | sed 's/✗ /sbctl sign -s /e'
-
+ 
 Sign boot loader so automatically signs new files when linux kernel,
 systemd, or boot loader updated:
 
 	sbctl sign -s -o \
-    /usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
-    /usr/lib/systemd/boot/efi/systemd-bootx64.efi
+	/usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
+	/usr/lib/systemd/boot/efi/systemd-bootx64.efi
 
 Enroll TPM
 ----------
@@ -309,6 +310,8 @@ Create recovery key. Copy it to a USB drive.
 Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive.
 
 	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto 
+
+# TODO: STUCK HERE. Rebooting seems to run boot loader and start linux, but doesn't unlock the ssd. Using the secret key that was onscreen during enrolling TPM shows "failed to start cryptography setup for root. 
 
 Reboot
 ------
