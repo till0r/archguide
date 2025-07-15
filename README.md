@@ -183,9 +183,8 @@ Contents:
 
 Configure mkinitcpio for unified kernal images with necessary hooks
 -------------------------------------------------------------------
-	grep "^HOOKS" /etc/mkinitcpio.conf > /etc/mkinitcpio.conf.d/01_hooks.conf
-	nano /etc/mkinitcpio.conf.d/01_hooks.conf
-
+	nano /etc/mkinitcpio.conf
+ 
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and 
 sd-encrypt hooks. Example:
 
