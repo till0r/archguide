@@ -189,7 +189,7 @@ Configure mkinitcpio for unified kernal images with necessary hooks
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and 
 sd-encrypt hooks. Example:
 
-	HOOKS=(base systemd keyboard autodetect microcode modconf kms sd-vconsole block sd-encrypt filesystems fsck)
+	HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck)
 
 Edit Preset file:
 
