@@ -410,14 +410,6 @@ Microcode & CPU Family/Model/Stepping:
 For Intel, look up on github page, goto releasenote.md at 
 https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
 
-An alternative to check that microcode is installed is to verify that
-/boot/intel-ucode.img exists (for Intel).
-
-Another alternative is to check that kernel/x86/microcode/GenuineIntel.bin
-is in the output of:
-
-	lsinitcpio --early /boot/initramfs-linux.img | grep microcode
-
 ### Check Security
 
 #### Secure Boot
