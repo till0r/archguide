@@ -318,19 +318,29 @@ After rebooting, make sure UEFI/BIOS has secure boot turned on. Sometimes it is 
 
 Enroll TPM
 ----------
-Create recovery key. Copy it to a USB drive.
+The following may need root privlidges. Just prepend with `sudo ` as usual if so.
+
+### Create recovery key.
+Copy it to a USB drive.
 
 	systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
 
-Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive.
+### Enroll keys into TPM2.
+Enter recovery key (with dashes) when asked for passphrase. Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive:
 
-	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto 
+	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto --tpm2-pcrs=7
 
-# TODO: STUCK HERE. Rebooting seems to run boot loader and start linux, but doesn't unlock the ssd. Using the secret key that was onscreen during enrolling TPM shows "failed to start cryptography setup for root. 
+### Verify enrolled:
 
-Reboot
-------
+	cryptsetup luksDump /dev/nvme0n1p2
+
+Look for `systemd-tpm2` entry under tokens.
+
+### Reboot
 	reboot
+
+> May whatever God you believe in have mercy on your soul. - Q
+
 
 Configure new system
 --------------------
@@ -387,12 +397,12 @@ Checks
 ------
 
 ### Check Internet Connection
-    ping archlinux.org
+	ping archlinux.org
 
 ### Check Microcode
 Microcode & CPU Family/Model/Stepping:
 
-    journalctl -k --grep='CPU0:|microcode:'
+	journalctl -k --grep='CPU0:|microcode:'
 
 For Intel, look up on github page, goto releasenote.md at 
 https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
@@ -403,21 +413,29 @@ An alternative to check that microcode is installed is to verify that
 Another alternative is to check that kernel/x86/microcode/GenuineIntel.bin
 is in the output of:
 
-    lsinitcpio --early /boot/initramfs-linux.img | grep microcode
+	lsinitcpio --early /boot/initramfs-linux.img | grep microcode
+
+### Check Security
+
+#### Secure Boot
+	sbctl status
+
+#### TPM2
+	cryptsetup luksDump /dev/nvme0n1p2
 
 ### Check Sound
-    speaker-test -c 2
+	speaker-test -c 2
 
 ### Check Swap file
 
 #### Ways to check if swap file is used
-    swapon --show
-    cat /proc/swaps
+	swapon --show
+	cat /proc/swaps
 
 #### Ways to check if swap in memory
-    vmstat
-    free
-    cat /proc/meminfo
+	vmstat
+	free
+	cat /proc/meminfo
 
 ### Check Time/Date status
-    timedatectl
+	timedatectl
