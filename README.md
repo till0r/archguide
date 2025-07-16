@@ -321,7 +321,7 @@ Enroll TPM
 The following may need root privlidges. Just prepend with `sudo ` as usual if so.
 
 ### Create recovery key.
-Copy it to a USB drive.
+Transcribe it to a safe place.
 
 	systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
 
