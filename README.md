@@ -264,11 +264,14 @@ Secure Boot
 Before starting, goto BIOS/UEFI put Secure Boot into Setup Mode. On some 
 computers (like the GMKtec G3 Plus), you need to set an administrator
 password for the BIOS/UEFI in order for Setup Mode to be available.
-Check secure boot status:
+
+### Check secure boot status:
 
 	sbctl status
 
-Create and enroll secure boot keys:
+### Create and enroll secure boot keys:
+
+You may need root access. Just prepend sbctl with `sudo ` if so.
 
 	sbctl create-keys
 	sbctl enroll-keys -m
@@ -277,12 +280,17 @@ Check status is installed:
 
 	sbctl status
 
-Check which files need signed:
+### Check which files need signed:
 
 	sbctl verify
 
-Sign all unsigned keys:
-(Usually just kernel and boot loarder, used in example below)
+### Sign all unsigned keys:
+You may need root access again. Just prepend with sbctl with `sudo ` in both the command and in the sed script if so. If a lot of files need verified, use following:
+
+	sbctl verify 2> /dev/null | \
+ 	sed -n $'s/\u2717 /sbctl sign -s / ; s/ is not signed$//e'
+
+You can also sign them by hand individually like so:
 
 	sbctl sign -s /boot/vmlinuz-linux
 	sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
@@ -290,12 +298,7 @@ Sign all unsigned keys:
 	sbctl sign -s /boot/EFI/Linux/arch-linux.efi
 	sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
 
-Tip: If a lot of files need verified, use following:
-
-	sbctl verify 2> /dev/null | \
- 	sed -n $'s/\u2717 /sbctl sign -s / ; s/ is not signed$//e'
-
- Verify no more files
+Verify no more files
  
 	sbctl verify
  
@@ -305,6 +308,13 @@ systemd, or boot loader updated:
 	sbctl sign -s -o \
 	/usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
 	/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+
+### Verify worked
+	reboot
+ 
+After rebooting, make sure UEFI/BIOS has secure boot turned on. Sometimes it is still turned off after booting into setup mode. Reboot and enter UEFI/BIOS to correct if you find that Secure Boot is disabled .
+
+	sbctl status
 
 Enroll TPM
 ----------
