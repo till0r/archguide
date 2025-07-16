@@ -186,7 +186,7 @@ Contents:
 	[Install]
 	WantedBy=swap.target
 
-Configure mkinitcpio for unified kernal images with necessary hooks
+Configure initial ramdisk & kernel hooks
 -------------------------------------------------------------------
 	nano /etc/mkinitcpio.conf
  
