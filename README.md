@@ -392,6 +392,7 @@ BASH tips
 * BASH quotes:
     - 'text' is literal
     - "text" interprets $VARS \escapes \`tics\` and !history
+    - $'\u2717 text' Interprets hex code unicode in the string escaped with \uXXXX
 
 Checks
 ------
