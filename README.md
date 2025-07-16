@@ -358,6 +358,8 @@ To setup and connect right now, use:
 	nmcli con modify SSID con.zone FIREWALLDZONE con.mdns yes
 
 ### Mouse support
+This may not be necessary. My mouse was recognized without this step after logging in the first time.
+
 Use `gpm -t help` to list supported mice. For example for Logitec mice:
 
 	gpm -m /dev/input/mice -t logim
