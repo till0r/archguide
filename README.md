@@ -407,8 +407,8 @@ Microcode & CPU Family/Model/Stepping:
 
 	journalctl -k --grep='CPU0:|microcode:'
 
-For Intel, look up on github page, goto releasenote.md at 
-https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
+For [Intel's Microcode](https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files),
+goto the file `releasenote.md` in their repository.
 
 ### Check Security
 
