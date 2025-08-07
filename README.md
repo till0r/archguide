@@ -108,7 +108,7 @@ Format and mount EFI Partition:
 
 Install essential packages
 --------------------------
-	pacstrap -K /mnt base linux linux-firmware alsa-utils firewalld gpm intel-ucode man-db man-pages nano networkmanager sbctl sudo tpm2-tss
+	pacstrap -K /mnt base linux linux-firmware alsa-utils gpm intel-ucode man-db man-pages vim networkmanager sbctl sudo tpm2-tss
 
 Enter the new system environment
 --------------------------------
@@ -126,7 +126,7 @@ Syncronize real-time clock:
 Add NTP servers:
 
 	mkdir /etc/systemd/timesyncd.conf.d/
-	nano /etc/systemd/timesyncd.conf.d/01_ntp.conf
+	vim /etc/systemd/timesyncd.conf.d/01_ntp.conf
 
 Example contents:
 
@@ -153,16 +153,16 @@ Set locale config:
 	echo 'COMPUTERNAME' > /etc/hostname
 
 ### Sudo setup
-    EDITOR=nano visudo -f /etc/sudoers.d/01_config
+    EDITOR=vim visudo -f /etc/sudoers.d/01_config
 
 Contents:
 
 	%wheel ALL=(ALL:ALL) ALL
-	Defaults editor=/usr/bin/rnano
+	Defaults editor=/usr/bin/rvim
 	Defaults umask=0022
 	Defaults umask_override
 
-If you made a mistake, when you exit nano then you'll get a message like
+If you made a mistake, when you exit vim then you'll get a message like
 
 	What now?
 
@@ -176,7 +176,7 @@ In that case, type `e` to go back and fix your mistake.
 
 Add to systemd:
 
-	nano /etc/systemd/system/swapfile.swap
+	vim /etc/systemd/system/swapfile.swap
 
 Contents:
 
@@ -188,7 +188,7 @@ Contents:
 
 Configure initial ramdisk & kernel hooks
 -------------------------------------------------------------------
-	nano /etc/mkinitcpio.conf
+	vim /etc/mkinitcpio.conf
  
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and 
 sd-encrypt hooks. Example:
@@ -197,7 +197,7 @@ sd-encrypt hooks. Example:
 
 Edit Preset file:
 
-	nano /etc/mkinitcpio.d/linux.preset
+	vim /etc/mkinitcpio.d/linux.preset
 
 Uncomment uki and comment image entries, replace start of path with `/boot`:
 
@@ -242,7 +242,6 @@ Setup users
 
 Enable services
 ---------------
-	systemctl enable firewalld
 	systemctl enable gpm
 	systemctl enable NetworkManager
 	systemctl enable swapfile.swap
@@ -284,11 +283,14 @@ Check status is installed:
 
 	sbctl verify
 
-### Sign all unsigned keys:
-You may need root access again. Just prepend with sbctl with `sudo ` in both the command and in the sed script if so. If a lot of files need verified, use following:
 
-	sbctl verify 2> /dev/null | \
- 	sed -n $'s/\u2717 /sbctl sign -s / ; s/ is not signed$//e'
+### Automatically sign via mkinitcpio
+
+`mkinitcpio` will sign some files automatically via a Hook
+
+	mkinitcpio -P
+
+### Sign all unsigned keys:
 
 You can also sign them by hand individually like so:
 
@@ -298,12 +300,12 @@ You can also sign them by hand individually like so:
 	sbctl sign -s /boot/EFI/Linux/arch-linux.efi
 	sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
 
-Verify no more files
+Verify which files have not been signed yet
  
 	sbctl verify
  
 Sign boot loader so automatically signs new files when linux kernel,
-systemd, or boot loader updated:
+systemd, or boot loader updated (https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Automatic_signing_with_the_pacman_hook):
 
 	sbctl sign -s -o \
 	/usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
@@ -326,7 +328,7 @@ Transcribe it to a safe place.
 	systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
 
 ### Enroll keys into TPM2.
-Enter recovery key (with dashes) when asked for passphrase. Add `--tpm2-with-pin=yes` at end to require a pin to unlock drive:
+Enter your encryption password after below command.
 
 	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto --tpm2-pcrs=7
 
@@ -373,7 +375,7 @@ Keyboard shortcuts
     - Ctrl-k = cut to end of line
     - Ctrl-y = paste
 
-* Nano defaults
+* vim defaults
     - Alt-Shift-A = start selecting text
     - Ctrl-k = cut selection or line if no selection
     - Ctrl-u = paste
