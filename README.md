@@ -375,11 +375,6 @@ Keyboard shortcuts
     - Ctrl-k = cut to end of line
     - Ctrl-y = paste
 
-* vim defaults
-    - Alt-Shift-A = start selecting text
-    - Ctrl-k = cut selection or line if no selection
-    - Ctrl-u = paste
-
 BASH tips
 ---------
 * This uncomments all:
