@@ -86,25 +86,44 @@ Create and mount the encrypted root partition. The passphrase will be wiped
 later, so it's ok to use a blank one. However, you need to remember the 
 OPAL Admin password that you set.
 
-	cryptsetup -v luksFormat --hw-opal-only /dev/nvme0n1p2
-	cryptsetup open /dev/nvme0n1p2 root
+	cryptsetup -v luksFormat --type luks2 --sector-size 4096 --hw-opal-only /dev/nvme0n1p2
+	cryptsetup open /dev/nvme0n1p2 cryptroot
 
 Format and mount encrypted root partition:
 
-	mkfs.ext4 /dev/mapper/root
-	mount /dev/mapper/root /mnt
+	mkfs.btrfs -f -L archroot /dev/mapper/cryptroot
+	mount /dev/mapper/cryptroot /mnt
 
-Check the mapping works as intended:
+Setup btrfs subovlumes
 
-	umount /mnt
-	cryptsetup close root
-	cryptsetup open /dev/nvme0n1p2 root
-	mount /dev/mapper/root /mnt
+	btrfs subvolume create /mnt/@
+	btrfs subvolume create /mnt/@root
+	btrfs subvolume create /mnt/@home
+	btrfs subvolume create /mnt/@log
+	btrfs subvolume create /mnt/@cache
+	btrfs subvolume create /mnt/@tmp
+	btrfs subvolume create /mnt/@pkg
+	btrfs subvolume create /mnt/@srv
+    umount /mnt
+
+Mount with typical flag (inspired by cachyos)
+    
+    mount -o subvol=/@,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt
+    mkdir -p /mnt/{boot,root,home,var/cache,var/tmp,var/log,var/cache/pacman/pkg,srv}
+    mount -o subvol=/@home,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/home
+    mount -o subvol=/@root,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/root
+    mount -o subvol=/@srv,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/srv
+    mount -o subvol=/@cache,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/cache
+    mount -o subvol=/@tmp,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
+    mount -o subvol=/@log,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/log
+    mount -o subvol=/@pkg,defaults,noatime,compress=no,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
 
 Format and mount EFI Partition:
 
 	mkfs.fat -F32 /dev/nvme0n1p1
-	mount --mkdir /dev/nvme0n1p1 /mnt/boot
+	mount --mkdir defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
+
+- [ ] TODO: tmpfs, zswap
 
 Install essential packages
 --------------------------
@@ -167,24 +186,6 @@ If you made a mistake, when you exit vim then you'll get a message like
 	What now?
 
 In that case, type `e` to go back and fix your mistake.
-
-### Swapfile (16GB)
-	fallocate -l 16GB /swapfile
-	chmod 600 /swapfile
-	mkswap /swapfile
-	swapon /swapfile
-
-Add to systemd:
-
-	vim /etc/systemd/system/swapfile.swap
-
-Contents:
-
-	[Swap]
-	What=/swapfile
-	
-	[Install]
-	WantedBy=swap.target
 
 Configure initial ramdisk & kernel hooks
 -------------------------------------------------------------------
