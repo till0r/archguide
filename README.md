@@ -50,6 +50,11 @@ the OPAL password if it's set.
 
 	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
 
+
+### Nuke Partitions if necessary
+    
+    sgdisk --zap-all /dev/nvme0n1
+
 ### Partition the disks
 Use a partitioning tool like fdisk to modify partition tables:
 
@@ -108,15 +113,16 @@ Setup btrfs subovlumes
 
 Mount with typical flag (inspired by cachyos)
     
-    mount -o subvol=/@,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt
-    mkdir -p /mnt/{boot,root,home,var/cache,var/tmp,var/log,var/cache/pacman/pkg,srv}
-    mount -o subvol=/@home,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/home
-    mount -o subvol=/@root,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/root
-    mount -o subvol=/@srv,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/srv
-    mount -o subvol=/@cache,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/cache
-    mount -o subvol=/@tmp,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
-    mount -o subvol=/@log,defaults,noatime,compress=zstd,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/log
-    mount -o subvol=/@pkg,defaults,noatime,compress=no,space_cache=v2,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
+    mount -o subvol=/@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
+    mkdir -p /mnt/{boot,root,home,var/tmp,var/log,var/cache,srv}
+    mount -o subvol=/@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
+    mount -o subvol=/@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
+    mount -o subvol=/@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
+    mount -o subvol=/@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
+    mount -o subvol=/@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
+    mount -o subvol=/@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
+    mkdir -p /mnt/var/cache/pacman/pkg
+    mount -o subvol=/@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
 
 Format and mount EFI Partition:
 
@@ -132,6 +138,11 @@ Install essential packages
 Enter the new system environment
 --------------------------------
 	arch-chroot /mnt
+
+
+### Disable CoW for /var/cache/pacman/pkg
+    
+    chattr +C /var/cache/pacman/pkg
 
 ### Time
 Set time zone:
