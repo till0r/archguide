@@ -11,18 +11,24 @@ Configure install envionment
 
 ### Verify the boot mode
 To verify the boot mode, check the UEFI bitness (should be 64):
-
-	cat /sys/firmware/efi/fw_platform_size
+```sh
+cat /sys/firmware/efi/fw_platform_size
+```
 
 ### Connect to the internet
-	iwctl --passphrase PASSPHRASE station wlan0 connect SSID
+```sh
+iwctl --passphrase PASSPHRASE station wlan0 connect SSID
+```
 
 Make sure connected by running (press Ctrl-c to stop):
-
-	ping archlinux.org
+```sh
+ping archlinux.org
+```
 
 ### Update the system clock
-	timedatectl
+```sh
+timedatectl
+```
 
 Configure the SSD
 -----------------
@@ -30,8 +36,10 @@ Configure the SSD
 ### Identify the SSD
 To identify these devices, use lsblk or fdisk:
 
-	lsblk
-	fdisk -l
+```sh
+lsblk
+fdisk -l
+```
 
 ### Perform a secure disk erasure
 SSDs with encryption are always encrypting their data even with no password
@@ -48,153 +56,163 @@ PSID is usually written on SSD. (Look on bottom of Samsung 990 Pro with
 Heatsink, for example). Don't foreget, resetting the device will reset
 the OPAL password if it's set.
 
-	cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
-
+```sh
+cryptsetup erase -v --hw-opal-factory-reset /dev/nvme0n1
+```
 
 ### Nuke Partitions if necessary
-    
-    sgdisk --zap-all /dev/nvme0n1
+```sh
+sgdisk --zap-all /dev/nvme0n1
+```
 
 ### Partition the disks
 Use a partitioning tool like fdisk to modify partition tables:
+```sh
+# Create EFI partition: 4 GiB, starting at default first sector
+sgdisk --new=1:0:+4G --typecode=1:ef00 /dev/nvme0n1
 
-	fdisk /dev/nvme0n1
+# Create Linux root partition: uses remaining space
+sgdisk --new=2:0:0 --typecode=2:8304 /dev/nvme0n1
 
-Create table:
+# Verify partitioning
+lsblk
+fdisk -l
+```
 
-* g - Create a new GPT partition table
-* n - Create new partition (EFI)
-    - Accept default partition number 1
-    - Accept default first sector
-    - Enter "+4G" for last sector
-* t - Change partition type
-    - Partition 1 selected automatically
-    - L to list all
-    - q to exit back to partition type prompt
-    - 1 EFI System
-* n - Create new partition (Linux filesystem)
-    - Accept defaults to use the remaining space
-* t - Change partition type
-    - Choose partition 2 or press enter
-    - L to list all
-    - q to exit back to partition type prompt 	
-    - 23 Linux root (x86-64)
-* w - Write changes and exit
-
-Verify partitions, use lsblk or fdisk again:
-
-	lsblk
-	fdisk -l
 
 ### Encrypt ssd, format and mount partitions
 Create and mount the encrypted root partition. The passphrase will be wiped 
 later, so it's ok to use a blank one. However, you need to remember the 
 OPAL Admin password that you set.
-
-	cryptsetup -v luksFormat --type luks2 --sector-size 4096 --hw-opal-only /dev/nvme0n1p2
-	cryptsetup open /dev/nvme0n1p2 cryptroot
+```sh
+cryptsetup -v luksFormat --type luks2 --sector-size 4096 --hw-opal-only /dev/nvme0n1p2
+cryptsetup open /dev/nvme0n1p2 cryptroot
+```
 
 Format and mount encrypted root partition:
-
-	mkfs.btrfs -f -L archroot /dev/mapper/cryptroot
-	mount /dev/mapper/cryptroot /mnt
+```sh
+mkfs.btrfs -f -L archroot /dev/mapper/cryptroot
+mount /dev/mapper/cryptroot /mnt
+```
 
 Setup btrfs subovlumes
-
-	btrfs subvolume create /mnt/@
-	btrfs subvolume create /mnt/@root
-	btrfs subvolume create /mnt/@home
-	btrfs subvolume create /mnt/@log
-	btrfs subvolume create /mnt/@cache
-	btrfs subvolume create /mnt/@tmp
-	btrfs subvolume create /mnt/@pkg
-	btrfs subvolume create /mnt/@srv
-    umount /mnt
+```sh
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@root
+btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@log
+btrfs subvolume create /mnt/@cache
+btrfs subvolume create /mnt/@tmp
+btrfs subvolume create /mnt/@pkg
+btrfs subvolume create /mnt/@srv
+umount /mnt
+```
 
 Mount with typical flag (inspired by cachyos)
-    
-    mount -o subvol=@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
-    mkdir -p /mnt/{boot,root,home,var/tmp,var/log,var/cache,srv}
-    mount -o subvol=@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
-    mount -o subvol=@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
-    mount -o subvol=@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
-    mount -o subvol=@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
-    mount -o subvol=@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
-    mount -o subvol=@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
-    mkdir -p /mnt/var/cache/pacman/pkg
-    mount -o subvol=@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
+```sh
+mount -o subvol=@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
+mkdir -p /mnt/{boot,root,home,var/tmp,var/log,var/cache,srv}
+mount -o subvol=@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
+mount -o subvol=@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
+mount -o subvol=@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
+mount -o subvol=@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
+mount -o subvol=@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
+mount -o subvol=@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
+mkdir -p /mnt/var/cache/pacman/pkg
+mount -o subvol=@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
+```
 
 Format and mount EFI Partition:
-
-	mkfs.fat -F32 /dev/nvme0n1p1
-	mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
+```sh
+mkfs.fat -F32 /dev/nvme0n1p1
+mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
+```
 
 - [ ] TODO: tmpfs, zram
 
 Install essential packages
 --------------------------
-	pacstrap -K /mnt base linux linux-firmware alsa-utils gpm intel-ucode man-db man-pages vim networkmanager sbctl sudo tpm2-tss
+```sh
+pacstrap -K /mnt base linux linux-firmware alsa-utils gpm intel-ucode man-db man-pages vim networkmanager sbctl sudo tpm2-tss
+```
 
 Generate fstab
 --------------
-    genfstab -U /mnt >> /mnt/etc/fstab
+```sh
+genfstab -U /mnt >> /mnt/etc/fstab
+```
 
 Enter the new system environment
 --------------------------------
-	arch-chroot /mnt
-
+```sh
+arch-chroot /mnt
+```
 
 ### Disable CoW for /var/cache/pacman/pkg
-    
-    chattr +C /var/cache/pacman/pkg
+Verification is done by pacman nevertheless.
+```sh
+chattr +C /var/cache/pacman/pkg
+```
 
 ### Time
 Set time zone:
-
-	ln -sf "/usr/share/zoneinfo/$(tzselect)" /etc/localtime
+```sh
+ln -sf "/usr/share/zoneinfo/$(tzselect)" /etc/localtime
+```
 
 Syncronize real-time clock:
-
-	hwclock -w
+```sh
+hwclock -w
+```
 
 Add NTP servers:
-
-	mkdir /etc/systemd/timesyncd.conf.d/
-	vim /etc/systemd/timesyncd.conf.d/01_ntp.conf
+```sh
+mkdir /etc/systemd/timesyncd.conf.d/
+vim /etc/systemd/timesyncd.conf.d/01_ntp.conf
+```
 
 Example contents:
-
-	[Time]
-	NTP=0.us.pool.ntp.org 1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org
-	FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
+```text
+[Time]
+NTP=0.us.pool.ntp.org 1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org
+FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
+```
 
 ### Localization
 Use `less /etc/local.gen` to see available options. Uncomment lines with
 locales en_US.UTF-8 and others in locale.gen
-
-	sed -i '/en_US.UTF-8/s/^#//' /etc/locale.gen
-	sed -i '/es_US.UTF-8/s/^#//' /etc/locale.gen
+```sh
+sed -i '/en_US.UTF-8/s/^#//' /etc/locale.gen
+sed -i '/es_US.UTF-8/s/^#//' /etc/locale.gen
+```
 
 Generate locales:
+```sh
+locale-gen
+```
 
-	locale-gen
-	
 Set locale config:
-
-	echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+```sh
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+```
 
 ### Network
-	echo 'COMPUTERNAME' > /etc/hostname
+```sh
+echo 'COMPUTERNAME' > /etc/hostname
+```
 
 ### Sudo setup
-    EDITOR=vim visudo -f /etc/sudoers.d/01_config
+```sh
+EDITOR=vim visudo -f /etc/sudoers.d/01_config
+```
 
 Contents:
-
-	%wheel ALL=(ALL:ALL) ALL
-	Defaults editor=/usr/bin/rvim
-	Defaults umask=0022
-	Defaults umask_override
+```sh
+%wheel ALL=(ALL:ALL) ALL
+Defaults editor=/usr/bin/rvim
+Defaults umask=0022
+Defaults umask_override
+```
 
 If you made a mistake, when you exit vim then you'll get a message like
 
@@ -204,82 +222,88 @@ In that case, type `e` to go back and fix your mistake.
 
 Configure initial ramdisk & kernel hooks
 -------------------------------------------------------------------
-	vim /etc/mkinitcpio.conf
+NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and sd-encrypt hooks. Example:
+```sh
+sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole keymap consolefont block sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+```
  
-NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and 
-sd-encrypt hooks. Example:
+Edit Preset file
+```sh
+# Comment the default image
+sed -i 's|^default_image="/boot/initramfs-linux\.img"|#&|' /etc/mkinitcpio.d/linux.preset
+# Activate UKI for the default
+sudo sed -i 's|^#default_uki="/efi/EFI/Linux/arch-linux\.efi"|default_uki="/boot/EFI/Linux/arch-linux.efi"|' /etc/mkinitcpio.d/linux.preset
 
-	HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole keymap consolefont block sd-encrypt filesystems fsck)
-
-Edit Preset file:
-
-	vim /etc/mkinitcpio.d/linux.preset
-
-Uncomment uki and comment image entries, replace start of path with `/boot`:
-
-	#ALL_config="/etc/mkinitcpio.conf"
-	ALL_kver="/boot/vmlinuz-linux"
-	
-	PRESETS=('default' 'fallback')
-	
-	#default_config="/etc/mkinitcpio.conf"
-	#default_image="/boot/initramfs-linux.img"
-	default_uki="/boot/EFI/Linux/arch-linux.efi"
-	#default_options="--splash=/usr/share/systemd/bootctl/splash-arch.bmp"
-	
-	#fallback_config="/etc/mkinitcpio.conf"
-	#fallback_image="/boot/initramfs-linux-fallback.img"
-	fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"
-	fallback_options="-S autodetect"
+# Similarly, comment the default fallback image
+sed -i 's|^fallback_image="/boot/initramfs-linux-fallback\.img"|#&|' /etc/mkinitcpio.d/linux.preset
+# Activate UKI for the fallback
+sudo sed -i 's|^#fallback_uki="/efi/EFI/Linux/arch-linux-fallback\.efi"|fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"|' /etc/mkinitcpio.d/linux.preset
+```
 
 Create /etc/vconsole.conf
+```sh
+touch /etc/vconsole.conf
+```
 
-	touch /etc/vconsole.conf
+- [ ] TODO: add us layout
 
 Install & Configure systemd-boot
 --------------------------------
 Install systemd-boot on the EFI partition:
+```sh
+bootctl install
+```
 
-	bootctl install
-
-Add kernel cmdline required for btrfs with luks (not needed for ext4, why?)
+Add kernel cmdline required for btrfs with luks
 ---------------------------------------------------------------------------
+This step is necessary, because we put `.` into a subvolume (`\@`) and `/etc/fstab` is not yet available. If we were using ext4 this step would not be necessary, because the partition could be used without further explaination.
+```sh
+# Get the UUID of the encrypted partition
+UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)
 
-    UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)
-    vim /etc/kernel/cmdline
-
-    root=/dev/mapper/cryptroot rw rootflags=subvol=@,defaults,noatime,compress=zstd,commit=120
-    rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet
-
+cat <<EOF | sudo tee /etc/kernel/cmdline > /dev/null
+root=/dev/mapper/cryptroot rw rootflags=subvol=@,defaults,noatime,compress=zstd,commit=120
+rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet
+EOF
+```
 
 Regenerate initial ramdisk
 --------------------------
-	mkinitcpio -P
+```sh
+mkinitcpio -P
+```
 
 Setup users
 -----------
 
 ### Set Root password
-	passwd
-	
+```sh
+passwd
+```
+
 ### Make a new user
-	useradd -m -G wheel USERNAME
-	passwd USERNAME
+```sh
+useradd -m -G wheel USERNAME
+passwd USERNAME
+```
 
 Enable services
 ---------------
-	systemctl enable gpm
-	systemctl enable NetworkManager
-	systemctl enable systemd-boot-update
-	systemctl enable systemd-resolved
-	systemctl enable systemd-timesyncd
+```sh
+systemctl enable gpm
+systemctl enable NetworkManager
+systemctl enable systemd-boot-update
+systemctl enable systemd-resolved
+systemctl enable systemd-timesyncd
+```
  
 Reboot
 ------
 Remove installation media before booting.
-
-	exit
-	reboot
+```sh
+exit
+reboot
+```
 
 Secure Boot
 -----------
@@ -288,64 +312,77 @@ computers (like the GMKtec G3 Plus), you need to set an administrator
 password for the BIOS/UEFI in order for Setup Mode to be available.
 
 ### Check secure boot status:
-
-	sbctl status
+```sh
+sbctl status
+```
 
 ### Create and enroll secure boot keys:
 
 You may need root access. Just prepend sbctl with `sudo ` if so. Using `-m` adds the current Microsoft keys as well (needed for dual booting).
-
-	sbctl create-keys
-	sbctl enroll-keys -m
+```sh
+sbctl create-keys
+sbctl enroll-keys -m
+```
 
 Check status is installed:
-
-	sbctl status
+```sh
+sbctl status
+```
 
 ### Check which files need signed:
-
-	sbctl verify
+```sh
+sbctl verify
+```
 
 
 ### Remove bootstrap images
-    
-    rm /boot/initramfs-linux*
+```sh
+rm /boot/initramfs-linux*
+```
 
 - [ ] TODO: Delete all other unverifiable files as well?
 
 ### Automatically sign via mkinitcpio
 
 `mkinitcpio` will sign some files automatically via a Hook
-
-	mkinitcpio -P
+```sh
+mkinitcpio -P
+```
 
 ### Sign all unsigned keys:
 
 You can also sign them by hand individually like so:
-
-	sbctl sign -s /boot/vmlinuz-linux
-	sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
-	sbctl sign -s /boot/EFI/Linux/arch-linux-fallback.efi
-	sbctl sign -s /boot/EFI/Linux/arch-linux.efi
-	sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
+```sh
+sbctl sign -s /boot/vmlinuz-linux
+sbctl sign -s /boot/EFI/BOOT/BOOTX64.EFI
+sbctl sign -s /boot/EFI/Linux/arch-linux-fallback.efi
+sbctl sign -s /boot/EFI/Linux/arch-linux.efi
+sbctl sign -s /boot/EFI/systemd/systemd-bootx64.efi
+```
 
 Verify which files have not been signed yet
- 
-	sbctl verify
+```sh
+sbctl verify
+```
  
 Sign boot loader so automatically signs new files when linux kernel,
 systemd, or boot loader updated (https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Automatic_signing_with_the_pacman_hook):
 
-	sbctl sign -s -o \
-	/usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
-	/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+```sh
+sbctl sign -s -o \
+/usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
+/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+```
 
 ### Verify worked
-	reboot
+```sh
+reboot
+``
  
 After rebooting, make sure UEFI/BIOS has secure boot turned on. Sometimes it is still turned off after booting into setup mode. Reboot and enter UEFI/BIOS to correct if you find that Secure Boot is disabled. 
-
-	sbctl status
+```sh
+sbctl status
+```
 
 Enroll TPM
 ----------
@@ -353,25 +390,29 @@ The following may need root privlidges. Just prepend with `sudo ` as usual if so
 
 ### Create recovery key.
 Transcribe it to a safe place.
-
-	systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
+```sh
+systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
+```
 
 ### Enroll keys into TPM2.
 Enter your encryption password after below command. This will use `pcr=7` only. See https://man.archlinux.org/man/systemd-cryptenroll.1#TPM2_PCRs_and_policies for more details.
-
-	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto
+```sh
+systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto
+```
 
 ### Verify enrolled:
-
-	cryptsetup luksDump /dev/nvme0n1p2
+```sh
+cryptsetup luksDump /dev/nvme0n1p2
+```
 
 Look for `systemd-tpm2` entry under tokens.
 
 ### Reboot
-	reboot
+```sh
+reboot
+```
 
 > May whatever God you believe in have mercy on your soul. - Q
-
 
 Configure new system
 --------------------
