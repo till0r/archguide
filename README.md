@@ -83,9 +83,9 @@ fdisk -l
 ### Encrypt ssd, format and mount partitions
 Create and mount the encrypted root partition. The passphrase will be wiped 
 later, so it's ok to use a blank one. However, you need to remember the 
-OPAL Admin password that you set.
+OPAL Admin password that you set. `cryptsetup` should choose a fitting sector-size automatically (see https://man7.org/linux/man-pages/man8/cryptsetup-luksFormat.8.html).
 ```sh
-cryptsetup -v luksFormat --type luks2 --sector-size 4096 --hw-opal-only /dev/nvme0n1p2
+cryptsetup -v luksFormat --type luks2 --hw-opal-only /dev/nvme0n1p2
 cryptsetup open /dev/nvme0n1p2 cryptroot
 ```
 
@@ -128,7 +128,7 @@ mkfs.fat -F32 /dev/nvme0n1p1
 mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 ```
 
-- [ ] TODO: tmpfs, zram
+- [ ] TODO: tmpfs
 
 Install essential packages
 --------------------------
@@ -321,7 +321,7 @@ sbctl status
 You may need root access. Just prepend sbctl with `sudo ` if so. Using `-m` adds the current Microsoft keys as well (needed for dual booting).
 ```sh
 sbctl create-keys
-sbctl enroll-keys -m
+sbctl enroll-keys
 ```
 
 Check status is installed:
