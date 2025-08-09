@@ -364,7 +364,7 @@ Verify which files have not been signed yet
 ```sh
 sbctl verify
 ```
- 
+
 Sign boot loader so automatically signs new files when linux kernel,
 systemd, or boot loader updated (https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Automatic_signing_with_the_pacman_hook):
 
@@ -377,8 +377,8 @@ sbctl sign -s -o \
 ### Verify worked
 ```sh
 reboot
-``
- 
+```
+
 After rebooting, make sure UEFI/BIOS has secure boot turned on. Sometimes it is still turned off after booting into setup mode. Reboot and enter UEFI/BIOS to correct if you find that Secure Boot is disabled. 
 ```sh
 sbctl status
