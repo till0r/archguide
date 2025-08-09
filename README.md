@@ -113,27 +113,31 @@ Setup btrfs subovlumes
 
 Mount with typical flag (inspired by cachyos)
     
-    mount -o subvol=/@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
+    mount -o subvol=@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
     mkdir -p /mnt/{boot,root,home,var/tmp,var/log,var/cache,srv}
-    mount -o subvol=/@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
-    mount -o subvol=/@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
-    mount -o subvol=/@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
-    mount -o subvol=/@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
-    mount -o subvol=/@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
-    mount -o subvol=/@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
+    mount -o subvol=@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
+    mount -o subvol=@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
+    mount -o subvol=@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
+    mount -o subvol=@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
+    mount -o subvol=@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
+    mount -o subvol=@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
     mkdir -p /mnt/var/cache/pacman/pkg
-    mount -o subvol=/@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
+    mount -o subvol=@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
 
 Format and mount EFI Partition:
 
 	mkfs.fat -F32 /dev/nvme0n1p1
-	mount --mkdir defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
+	mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 
-- [ ] TODO: tmpfs, zswap
+- [ ] TODO: tmpfs, zram
 
 Install essential packages
 --------------------------
 	pacstrap -K /mnt base linux linux-firmware alsa-utils gpm intel-ucode man-db man-pages vim networkmanager sbctl sudo tpm2-tss
+
+Generate fstab
+--------------
+    genfstab -U /mnt >> /mnt/etc/fstab
 
 Enter the new system environment
 --------------------------------
@@ -238,6 +242,16 @@ Install systemd-boot on the EFI partition:
 
 	bootctl install
 
+Add kernel cmdline required for btrfs with luks (not needed for ext4, why?)
+---------------------------------------------------------------------------
+
+    UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)
+    vim /etc/kernel/cmdline
+
+    root=/dev/mapper/cryptroot rw rootflags=subvol=@,defaults,noatime,compress=zstd,commit=120
+    rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet
+
+
 Regenerate initial ramdisk
 --------------------------
 	mkinitcpio -P
@@ -256,7 +270,6 @@ Enable services
 ---------------
 	systemctl enable gpm
 	systemctl enable NetworkManager
-	systemctl enable swapfile.swap
 	systemctl enable systemd-boot-update
 	systemctl enable systemd-resolved
 	systemctl enable systemd-timesyncd
@@ -266,8 +279,6 @@ Reboot
 Remove installation media before booting.
 
 	exit
-	swapoff /mnt/swapfile
-	umount -a
 	reboot
 
 Secure Boot
@@ -282,7 +293,7 @@ password for the BIOS/UEFI in order for Setup Mode to be available.
 
 ### Create and enroll secure boot keys:
 
-You may need root access. Just prepend sbctl with `sudo ` if so.
+You may need root access. Just prepend sbctl with `sudo ` if so. Using `-m` adds the current Microsoft keys as well (needed for dual booting).
 
 	sbctl create-keys
 	sbctl enroll-keys -m
@@ -295,6 +306,12 @@ Check status is installed:
 
 	sbctl verify
 
+
+### Remove bootstrap images
+    
+    rm /boot/initramfs-linux*
+
+- [ ] TODO: Delete all other unverifiable files as well?
 
 ### Automatically sign via mkinitcpio
 
@@ -340,9 +357,9 @@ Transcribe it to a safe place.
 	systemd-cryptenroll /dev/nvme0n1p2 --recovery-key
 
 ### Enroll keys into TPM2.
-Enter your encryption password after below command.
+Enter your encryption password after below command. This will use `pcr=7` only. See https://man.archlinux.org/man/systemd-cryptenroll.1#TPM2_PCRs_and_policies for more details.
 
-	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto --tpm2-pcrs=7
+	systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=empty --tpm2-device=auto
 
 ### Verify enrolled:
 
