@@ -127,7 +127,8 @@ mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 
 ### Install essential packages
 ```sh
-pacstrap -K /mnt base linux linux-firmware alsa-utils gpm intel-ucode man-db man-pages vim networkmanager sbctl sudo tpm2-tss
+pacstrap -K /mnt base linux linux-firmware alsa-utils gpm man-db man-pages vim networkmanager sbctl sudo tpm2-tss openssh pacman-contrib
+pacstrap /mnt intel-ucode
 ```
 
 ### Generate fstab
@@ -148,7 +149,7 @@ chattr +C /var/cache/pacman/pkg
 ```
 
 ### Time
-Set time zone:
+Set time zone `tzselect` will ask you for your local timezone:
 ```sh
 ln -sf "/usr/share/zoneinfo/$(tzselect)" /etc/localtime
 ```
@@ -194,24 +195,6 @@ echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 echo 'COMPUTERNAME' > /etc/hostname
 ```
 
-### Sudo setup
-```sh
-EDITOR=vim visudo -f /etc/sudoers.d/01_config
-```
-
-Contents:
-```sh
-%wheel ALL=(ALL:ALL) ALL
-Defaults editor=/usr/bin/rvim
-Defaults umask=0022
-Defaults umask_override
-```
-
-If you made a mistake, when you exit vim then you'll get a message like
-
-	What now?
-
-In that case, type `e` to go back and fix your mistake.
 
 ### Configure initial ramdisk & kernel hooks
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and sd-encrypt hooks. Example:
@@ -251,7 +234,7 @@ This step is necessary, because we put `.` into a subvolume (`\@`) and `/etc/fst
 # Get the UUID of the encrypted partition
 UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)
 
-cat <<EOF | sudo tee /etc/kernel/cmdline > /dev/null
+cat <<EOF | tee /etc/kernel/cmdline > /dev/null
 root=/dev/mapper/cryptroot rw rootflags=subvol=@,defaults,noatime,compress=zstd,commit=120
 rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet
 EOF
@@ -434,24 +417,92 @@ free -h
 
 ## Configure new system
 
-### Wifi connection
-To setup without connecting until next boot, use the following:
+### Sudo setup
+Note, that it is best practice to edit `sudoers` config with `visudo` to avoid breaking your `sudo` config. Below version works for intial setups but you have been warned. :)
+```sh
+sudo tee /etc/sudoers.d/01_config > /dev/null <<'EOF'
+%wheel ALL=(ALL:ALL) ALL
+Defaults editor=/usr/bin/vim
+Defaults umask=0022
+Defaults umask_override
+EOF
+```
 
-	nmcli con add type wifi ssid SSID \
-	wifi-sec.key wpa-psk wifi-sec.psk PASSPHRASE \
-	con.id NAME con.mdns yes con.zone FIREWALLDZONE
+### Network connection
+Connect to Wi-Fi
+```sh
+nmcli device wifi connect SSID password PASSPHRASE
+nmcli con modify SSID con.mdns yes
+```
 
-To setup and connect right now, use:
+Setup mdns for Wired
+- [ ] TODO: Test this
+nmcli connection modify "Wired connection 1" connection.mdns yes
+nmcli connection show
 
-	nmcli device wifi connect SSID password PASSPHRASE
-	nmcli con modify SSID con.zone FIREWALLDZONE con.mdns yes
+### Sign pacman key
+```sh
+pacman-key --init
+pacman-key --populate archlinux
+```
 
-### Mouse support
-This may not be necessary. My mouse was recognized without this step after logging in the first time.
+### Enable automatic pacman cache cleaning
+```sh
+tee /etc/pacman.d/hooks/clean_cache.hook > /dev/null <<'EOF'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
 
-Use `gpm -t help` to list supported mice. For example for Logitec mice:
+[Action]
+Description = Trim pacman cache: keep 2 for installed, purge uninstalled
+When = PostTransaction
+Depends = pacman-contrib
+Exec = /bin/sh -c '/usr/bin/paccache -r -k2 && /usr/bin/paccache -r -u -k0'
+EOF
+```
 
-	gpm -m /dev/input/mice -t logim
+### Add users
+Add a user that is member of `wheel`.
+```sh
+useradd -mG wheel till
+passwd till
+```
+
+### Change to cachyos repos
+```sh
+wcurl https://mirror.cachyos.org/cachyos-repo.tar.xz
+tar xvf cachyos-repo.tar.xz && cd cachyos-repo
+./cachyos-repo.sh
+```
+
+### Install graphics and sound
+```sh
+pacman -S vulkan-intel  # TODO: only for intel
+pacman -S pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
+```
+
+### Install GNOME
+```sh
+pacman -S gnome-shell gnome-settings-daemon gnome-tweaks gnome-shell-extensions xdg-desktop-portal-gnome gdm
+pacman -S noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-dejavu
+
+pacman -S gnome-control-center gnome-disk-utility gnome-font-viwer gnome-keyring gnome-menus gnome-system-monitor loupe natilus papers papers-lib-docs snapshot sushi ptyxis
+
+pacman -S --needed power-profiles-daemon
+systemctl enable --now power-profiles-daemon
+
+pacman -S --needed cups system-config-printer
+systemctl enable --now cups
+
+pacman -S firefox ffmpeg
+
+systemctl enable --now gdm
+```
+
+- [ ] TODO: Hardware acceleration https://wiki.archlinux.org/title/Hardware_video_acceleration
 
 Tips
 ====
