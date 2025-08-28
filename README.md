@@ -6,6 +6,9 @@ This is usually written on the SSD. (E.G. Look on bottom of Samsung 990
 Pro with Heatsink.) Take a picture with your phone of the PSID for your 
 records.
 
+## Connect to Wi-Fi
+iwctl --passphrase PASSPHRASE station wlan0 connect SSID
+
 ## Bootsrap
 ### Verify the boot mode
 To verify the boot mode, check the UEFI bitness (should be 64):
@@ -537,14 +540,6 @@ Checks
 ### Check Internet Connection
 	ping archlinux.org
 
-### Check Microcode
-Microcode & CPU Family/Model/Stepping:
-
-	journalctl -k --grep='CPU0:|microcode:'
-
-For [Intel's Microcode](https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files),
-goto the file `releasenote.md` in their repository.
-
 ### Check Security
 
 #### Secure Boot
@@ -577,3 +572,6 @@ Maintainance
 ```
 systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=1 --tpm2-device=auto
 ```
+
+## Non-Urgent TODOs
+- [ ] Add a [plymouth splash with SimpleDRM](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)
