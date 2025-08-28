@@ -6,9 +6,7 @@ This is usually written on the SSD. (E.G. Look on bottom of Samsung 990
 Pro with Heatsink.) Take a picture with your phone of the PSID for your 
 records.
 
-Configure install envionment
-----------------------------
-
+## Bootsrap
 ### Verify the boot mode
 To verify the boot mode, check the UEFI bitness (should be 64):
 ```sh
@@ -29,9 +27,6 @@ ping archlinux.org
 ```sh
 timedatectl
 ```
-
-Configure the SSD
------------------
 
 ### Identify the SSD
 To identify these devices, use lsblk or fdisk:
@@ -130,24 +125,22 @@ mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 
 - [ ] TODO: tmpfs
 
-Install essential packages
---------------------------
+### Install essential packages
 ```sh
 pacstrap -K /mnt base linux linux-firmware alsa-utils gpm intel-ucode man-db man-pages vim networkmanager sbctl sudo tpm2-tss
 ```
 
-Generate fstab
---------------
+### Generate fstab
 ```sh
 genfstab -U /mnt >> /mnt/etc/fstab
 ```
 
-Enter the new system environment
---------------------------------
+## Enter the new system environment
 ```sh
 arch-chroot /mnt
 ```
 
+## Userspace
 ### Disable CoW for /var/cache/pacman/pkg
 Verification is done by pacman nevertheless.
 ```sh
@@ -220,8 +213,7 @@ If you made a mistake, when you exit vim then you'll get a message like
 
 In that case, type `e` to go back and fix your mistake.
 
-Configure initial ramdisk & kernel hooks
--------------------------------------------------------------------
+### Configure initial ramdisk & kernel hooks
 NOTE: ORDER IS IMPORTANT!!! Make sure has systemd, sd-vconsole, and sd-encrypt hooks. Example:
 ```sh
 sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole keymap consolefont block sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
@@ -232,12 +224,12 @@ Edit Preset file
 # Comment the default image
 sed -i 's|^default_image="/boot/initramfs-linux\.img"|#&|' /etc/mkinitcpio.d/linux.preset
 # Activate UKI for the default
-sudo sed -i 's|^#default_uki="/efi/EFI/Linux/arch-linux\.efi"|default_uki="/boot/EFI/Linux/arch-linux.efi"|' /etc/mkinitcpio.d/linux.preset
+sed -i 's|^#default_uki="/efi/EFI/Linux/arch-linux\.efi"|default_uki="/boot/EFI/Linux/arch-linux.efi"|' /etc/mkinitcpio.d/linux.preset
 
 # Similarly, comment the default fallback image
 sed -i 's|^fallback_image="/boot/initramfs-linux-fallback\.img"|#&|' /etc/mkinitcpio.d/linux.preset
 # Activate UKI for the fallback
-sudo sed -i 's|^#fallback_uki="/efi/EFI/Linux/arch-linux-fallback\.efi"|fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"|' /etc/mkinitcpio.d/linux.preset
+sed -i 's|^#fallback_uki="/efi/EFI/Linux/arch-linux-fallback\.efi"|fallback_uki="/boot/EFI/Linux/arch-linux-fallback.efi"|' /etc/mkinitcpio.d/linux.preset
 ```
 
 Create /etc/vconsole.conf
@@ -247,15 +239,13 @@ touch /etc/vconsole.conf
 
 - [ ] TODO: add us layout
 
-Install & Configure systemd-boot
---------------------------------
+### Install & Configure systemd-boot
 Install systemd-boot on the EFI partition:
 ```sh
 bootctl install
 ```
 
-Add kernel cmdline required for btrfs with luks
----------------------------------------------------------------------------
+### Add kernel cmdline required for btrfs with luks
 This step is necessary, because we put `.` into a subvolume (`\@`) and `/etc/fstab` is not yet available. If we were using ext4 this step would not be necessary, because the partition could be used without further explaination.
 ```sh
 # Get the UUID of the encrypted partition
@@ -267,14 +257,12 @@ rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet
 EOF
 ```
 
-Regenerate initial ramdisk
---------------------------
+### Regenerate initial ramdisk
 ```sh
 mkinitcpio -P
 ```
 
-Setup users
------------
+### Setup users
 
 ### Set Root password
 ```sh
@@ -287,8 +275,7 @@ useradd -m -G wheel USERNAME
 passwd USERNAME
 ```
 
-Enable services
----------------
+### Enable services
 ```sh
 systemctl enable gpm
 systemctl enable NetworkManager
@@ -297,16 +284,14 @@ systemctl enable systemd-resolved
 systemctl enable systemd-timesyncd
 ```
  
-Reboot
-------
+### Reboot
 Remove installation media before booting.
 ```sh
 exit
 reboot
 ```
 
-Secure Boot
------------
+## Secure Boot
 Before starting, goto BIOS/UEFI put Secure Boot into Setup Mode. On some 
 computers (like the GMKtec G3 Plus), you need to set an administrator
 password for the BIOS/UEFI in order for Setup Mode to be available.
@@ -318,7 +303,7 @@ sbctl status
 
 ### Create and enroll secure boot keys:
 
-You may need root access. Just prepend sbctl with `sudo ` if so. Using `-m` adds the current Microsoft keys as well (needed for dual booting).
+You may need root access. Using `-m` adds the current Microsoft keys as well (needed for dual booting).
 ```sh
 sbctl create-keys
 sbctl enroll-keys
@@ -384,9 +369,8 @@ After rebooting, make sure UEFI/BIOS has secure boot turned on. Sometimes it is 
 sbctl status
 ```
 
-Enroll TPM
-----------
-The following may need root privlidges. Just prepend with `sudo ` as usual if so.
+## Enroll TPM
+The following may need root privlidges.
 
 ### Create recovery key.
 Transcribe it to a safe place.
@@ -414,8 +398,7 @@ reboot
 
 > May whatever God you believe in have mercy on your soul. - Q
 
-Enable zram
------------
+## Enable zram
 Adaption of https://wiki.archlinux.org/title/Zram#Using_a_udev_rule
 ```sh
 # Create dirs (harmless if they already exist)
@@ -449,8 +432,7 @@ lsblk
 free -h
 ```
 
-Configure new system
---------------------
+## Configure new system
 
 ### Wifi connection
 To setup without connecting until next boot, use the following:
