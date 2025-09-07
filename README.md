@@ -123,14 +123,14 @@ umount /mnt
 
 Mount with typical flag (inspired by cachyos)
 ```sh
-mount -o subvol=@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
+mount -o subvol=@,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt
 mkdir -p /mnt/{boot,root,home,var/tmp,var/log,var/cache,srv}
-mount -o subvol=@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
-mount -o subvol=@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
-mount -o subvol=@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
-mount -o subvol=@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
-mount -o subvol=@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
-mount -o subvol=@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
+mount -o subvol=@home,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/home
+mount -o subvol=@root,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/root
+mount -o subvol=@srv,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/srv
+mount -o subvol=@cache,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/var/cache
+mount -o subvol=@tmp,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
+mount -o subvol=@log,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/var/log
 mkdir -p /mnt/var/cache/pacman/pkg
 mount -o subvol=@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
 ```
