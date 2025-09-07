@@ -1,10 +1,25 @@
-Arch Install with Encrypted Root, Secure Boot, and TPM2
-=======================================================
+# Arch Install with Encrypted Root, Secure Boot, and TPM2 - powered by btrfs and cachyos
+
+**Base System**
+- OPAL/LUKS encrypted root
+- TPM2 stored decryption key with auto-unlock
+- Secure Boot protected UKI
+- systemd-boot
+- Snapshot-ready btrfs
+
+**Optional**
+- CachyOS repos
+- sudo
+- GNOME
+- Podman/Quadlet server
+- OpenSSH server
+- restic backups
 
 Before booting, you may need your OPAL PSID to factory reset the SSD. 
-This is usually written on the SSD. (E.G. Look on bottom of Samsung 990
-Pro with Heatsink.) Take a picture with your phone of the PSID for your 
-records.
+This is usually written on the SSD.
+
+## Config
+- [ ] TODO: Add config section
 
 ## Connect to Wi-Fi
 iwctl --passphrase PASSPHRASE station wlan0 connect SSID
@@ -132,6 +147,7 @@ mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 ```sh
 pacstrap -K /mnt base linux linux-firmware alsa-utils gpm man-db man-pages vim networkmanager sbctl sudo tpm2-tss openssh pacman-contrib
 pacstrap /mnt intel-ucode
+pacstrap /mnt dosfstools
 ```
 
 ### Generate fstab
@@ -165,14 +181,12 @@ hwclock -w
 Add NTP servers:
 ```sh
 mkdir /etc/systemd/timesyncd.conf.d/
-vim /etc/systemd/timesyncd.conf.d/01_ntp.conf
-```
 
-Example contents:
-```text
+tee /etc/systemd/timesyncd.conf.d/01_ntp.conf > /dev/null <<'EOF'
 [Time]
-NTP=0.us.pool.ntp.org 1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org
+NTP=0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 3.pool.ntp.org
 FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
+EOF
 ```
 
 ### Localization
@@ -180,7 +194,7 @@ Use `less /etc/local.gen` to see available options. Uncomment lines with
 locales en_US.UTF-8 and others in locale.gen
 ```sh
 sed -i '/en_US.UTF-8/s/^#//' /etc/locale.gen
-sed -i '/es_US.UTF-8/s/^#//' /etc/locale.gen
+sed -i '/en_IE.UTF-8/s/^#//' /etc/locale.gen
 ```
 
 Generate locales:
@@ -190,7 +204,8 @@ locale-gen
 
 Set locale config:
 ```sh
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+echo 'LANG=en_IE.UTF-8' > /etc/locale.conf
+echo 'LC_MESSAGES=en_US.UTF-8' > /etc/locale.conf
 ```
 
 ### Network
@@ -223,7 +238,7 @@ Create /etc/vconsole.conf
 touch /etc/vconsole.conf
 ```
 
-- [ ] TODO: add us layout
+- [ ] TODO: explicitly add us layout
 
 ### Install & Configure systemd-boot
 Install systemd-boot on the EFI partition:
@@ -248,17 +263,9 @@ EOF
 mkinitcpio -P
 ```
 
-### Setup users
-
 ### Set Root password
 ```sh
 passwd
-```
-
-### Make a new user
-```sh
-useradd -m -G wheel USERNAME
-passwd USERNAME
 ```
 
 ### Enable services
@@ -314,7 +321,6 @@ rm /boot/initramfs-linux*
 - [ ] TODO: Delete all other unverifiable files as well?
 
 ### Automatically sign via mkinitcpio
-
 `mkinitcpio` will sign some files automatically via a Hook
 ```sh
 mkinitcpio -P
@@ -382,8 +388,6 @@ Look for `systemd-tpm2` entry under tokens.
 reboot
 ```
 
-> May whatever God you believe in have mercy on your soul. - Q
-
 ## Enable zram
 Adaption of https://wiki.archlinux.org/title/Zram#Using_a_udev_rule
 ```sh
@@ -419,11 +423,10 @@ free -h
 ```
 
 ## Configure new system
-
 ### Sudo setup
 Note, that it is best practice to edit `sudoers` config with `visudo` to avoid breaking your `sudo` config. Below version works for intial setups but you have been warned. :)
 ```sh
-sudo tee /etc/sudoers.d/01_config > /dev/null <<'EOF'
+tee /etc/sudoers.d/01_config > /dev/null <<'EOF'
 %wheel ALL=(ALL:ALL) ALL
 Defaults editor=/usr/bin/vim
 Defaults umask=0022
@@ -435,19 +438,21 @@ EOF
 Connect to Wi-Fi
 ```sh
 nmcli device wifi connect SSID password PASSPHRASE
-nmcli con modify SSID con.mdns yes
+nmcli con modify SSID con.mdns 1
 ```
 
 Setup mdns for Wired
-- [ ] TODO: Test this
-nmcli connection modify "Wired connection 1" connection.mdns yes
+```sh
+nmcli connection modify "Wired connection 1" connection.mdns 1
 nmcli connection show
+```
 
 ### Sign pacman key
 ```sh
 pacman-key --init
 pacman-key --populate archlinux
 ```
+
 
 ### Enable automatic pacman cache cleaning
 ```sh
@@ -467,13 +472,6 @@ Exec = /bin/sh -c '/usr/bin/paccache -r -k2 && /usr/bin/paccache -r -u -k0'
 EOF
 ```
 
-### Add users
-Add a user that is member of `wheel`.
-```sh
-useradd -mG wheel till
-passwd till
-```
-
 ### Change to cachyos repos
 ```sh
 wcurl https://mirror.cachyos.org/cachyos-repo.tar.xz
@@ -481,6 +479,20 @@ tar xvf cachyos-repo.tar.xz && cd cachyos-repo
 ./cachyos-repo.sh
 ```
 
+CachyOS offers a neat tool to update your systems mirrors for their repos.
+```sh
+pacman -S cachyos-rate-mirrors
+cachyos-rate-mirrors
+```
+
+### Add users
+Add a user that is member of `wheel`.
+```sh
+useradd -mG wheel till
+passwd till
+```
+
+## Desktop Experience
 ### Install graphics and sound
 ```sh
 pacman -S vulkan-intel  # TODO: only for intel
@@ -492,7 +504,7 @@ pacman -S pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
 pacman -S gnome-shell gnome-settings-daemon gnome-tweaks gnome-shell-extensions xdg-desktop-portal-gnome gdm
 pacman -S noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-dejavu
 
-pacman -S gnome-control-center gnome-disk-utility gnome-font-viwer gnome-keyring gnome-menus gnome-system-monitor loupe natilus papers papers-lib-docs snapshot sushi ptyxis
+pacman -S gnome-control-center gnome-disk-utility gnome-font-viwer gnome-keyring gnome-menus gnome-system-monitor loupe natilus papers papers-lib-docs snapshot sushi ptyxis gnome-browser-connector
 
 pacman -S --needed power-profiles-daemon
 systemctl enable --now power-profiles-daemon
@@ -507,8 +519,231 @@ systemctl enable --now gdm
 
 - [ ] TODO: Hardware acceleration https://wiki.archlinux.org/title/Hardware_video_acceleration
 
-Tips
-====
+## Server Experience
+### Config and start ssh
+```sh
+sudo sed -i 's/^[#[:space:]]*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+
+systemctl enable --now sshd.service
+```
+
+### Install Cockpit
+```sh
+pacman -S cockpit cockpit-podman cockpit-storaged cockpit-packagekit
+```
+
+```sh
+mkdir -p /etc/systemd/system/cockpit.socket.d/
+
+tee /etc/systemd/system/cockpit.socket.d/listen.conf > /dev/null <<'EOF'
+[Socket]
+ListenStream=
+ListenStream=443
+EOF
+```
+
+```sh
+systemctl enable --now cockpit.socket
+```
+
+### Disable Notebook Lid
+```sh
+sudo sed -i 's/^[#[:space:]]*HandleLidSwitch=.*/HandleLidSwitch=ignore/' /etc/systemd/logind.conf
+systemctl restart systemd-logind.service
+```
+
+### Disable bluetooth and wifi
+```sh
+rfkill block wifi
+rfkill block bluetooth
+```
+
+## Add more encrypted disks
+The following setup will ensure that all users in `wheel` have access to the data.
+```sh
+sudo mkdir -p /mnt/media0
+sudo chown root:wheel /mnt/media0
+sudo chmod 2770 /mnt/media0    # 2 = setgid; ensures group inheritance for newly created files and directories
+
+sudo systemd-cryptenroll /dev/sda --wipe-slot=empty --tpm2-device=auto
+
+# Get the UUID of the encrypted partition
+UUID=$(blkid -s UUID -o value /dev/sda)
+```
+
+`/etc/crypttab`
+```sh
+cryptmedia0     UUID=973b0b1f-745d-490c-90fd-e5bdcba59954       none    luks,tpm2-device=auto
+```
+
+`/etc/fstab`
+```sh
+# media0
+/dev/mapper/cryptmedia0 /mnt/media0     ext4            defaults,grpid,nofail                                                  0 2
+```
+
+## Run quadlets
+```sh
+ln -s ~/dotfiles/homeassistant.container ~/.config/containers/systemd/homeassistant.container
+
+systemctl --user daemon-reload
+systemctl --user start homeassistant.service
+# systemctl --user restart homeassistant.service
+```
+
+Enable start of service before first login.
+```sh
+loginctl enable-linger "$USER"
+```
+
+Add user to uucp
+```sh
+sudo usermod -aG uucp $USER
+```
+
+Use stow to deploy services
+```sh
+stow -d ~/quadlets -t ~/.config/containers/systemd -S paperless
+
+# Unstow (remove symlinks):
+#stow -d ~/quadlets -t ~/.config/containers/systemd -D paperless 
+```
+
+Use ln instead
+```sh
+ln -s ~/quadlets/restic/restic-backup-srv.container ~/.config/containers/systemd/restic-backup-srv.container
+ln -s ~/quadlets/restic/restic-backup-srv.timer ~/.config//systemd/user/restic-backup-srv.timer
+```
+
+Verify links
+```sh
+ls -l ~/.config/containers/systemd | grep paperless
+```
+
+Reload unit files
+```sh
+systemctl --user daemon-reload
+```
+
+Check for quadlet errors
+```sh
+journalctl --user -b -e -g quadlet
+```
+
+List unit files
+```sh
+systemctl --user list-unit-files
+```
+
+Start a unit file or timer
+```sh
+systemctl --user start restic-backup-srv.service
+systemctl --user enable --now restic-backup-srv.timer
+```
+
+Follow a container along
+```sh
+journalctl --user -u restic-backup-srv.service -f
+```
+
+Review past logs
+```sh
+journalctl --user -xeu restic-backup-srv.service
+```
+
+## Backups via restic
+### Prepare ssh environment
+```sh
+sudo mkdir -p /srv/restic/{ssh,cache,excludes}
+# repo password for restic (NOT your SSH key passphrase)
+echo 'change-me-long-random' | sudo tee /srv/restic/password.txt >/dev/null
+sudo chmod 600 /srv/restic/password.txt
+
+# put your SSH private key here (or copy existing)
+sudo cp ~/.ssh/id_ed25519 /srv/restic/ssh/
+sudo chmod 600 /srv/restic/ssh/id_ed25519
+```
+
+```sh
+ssh-keyscan -p 22 backup.example.com | sudo tee -a /srv/restic/ssh/known_hosts >/dev/null
+sudo chmod 644 /srv/restic/ssh/known_hosts
+```
+
+```sh
+sudo tee /srv/restic/ssh/config >/dev/null <<'EOF'
+Host restic-target
+    HostName backup.example.com
+    User u12345
+    Port 22
+    IdentityFile /root/.ssh/id_ed25519
+EOF
+sudo chmod 644 /srv/restic/ssh/config
+```
+
+```sh
+sudo tee /srv/restic/restic.env >/dev/null <<'EOF'
+# Use SSH alias above (or use sftp://u@host:22//path syntax)
+RESTIC_REPOSITORY=sftp:restic-target:/home/u12345/restic-repo
+RESTIC_PASSWORD_FILE=/config/password.txt
+RESTIC_CACHE_DIR=/cache
+# Quiet progress in logs (optional)
+RESTIC_PROGRESS_FPS=0
+EOF
+sudo chmod 640 /srv/restic/restic.env
+```
+
+```sh
+sudo tee /srv/restic/excludes/folderA.txt >/dev/null <<'EOF'
+# one path per line, relative to the mounted source
+subfolder-to-skip/
+another-subfolder/
+EOF
+```
+
+### Init the repo
+```sh
+podman run --rm --network host   -v /srv/restic:/config:ro   -v /srv/restic/ssh:/root/.ssh:ro   -v /srv/restic/cache:/cache   -e RESTIC_REPOSITORY="sftp:restic-storagebox:/backups/restic-repo"   -e RESTIC_PASSWORD_FILE="/config/secret/password.txt"   docker.io/restic/restic:latest init
+```
+
+### Quadlets
+```toml
+[Unit]
+Description=Restic backup /srv
+
+[Container]
+Image=docker.io/restic/restic:latest
+ContainerName=restic-backup-srv
+Network=host
+Volume=/srv/restic:/config:ro
+Volume=/srv/restic/ssh:/root/.ssh:ro
+Volume=/srv/restic/cache:/cache
+Volume=/srv:/srv:ro
+EnvironmentFile=/srv/restic/restic.env
+Exec=backup /srv --one-file-system --exclude-file /config/srv_backup_excludes.txt
+NoNewPrivileges=true
+ReadOnly=true
+
+[Service]
+RuntimeMaxSec=1h
+
+[Install]
+WantedBy=default.target
+```
+
+```toml
+[Unit]
+Description=Timer: restic-backup-srv
+
+[Timer]
+OnCalendar=*-*-* 00:00:00
+RandomizedDelaySec=1m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+## Tips
 
 Keyboard shortcuts
 ------------------
@@ -565,9 +800,7 @@ Checks
 ### Check Time/Date status
 	timedatectl
 
-Maintainance
-------------
-
+## Maintainance
 ### Re-enroll TPM
 ```
 systemd-cryptenroll /dev/nvme0n1p2 --wipe-slot=1 --tpm2-device=auto
