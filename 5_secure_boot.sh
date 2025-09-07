@@ -1,3 +1,5 @@
+#!/bin/bash
+set -euo pipefail
 
 # Before starting, goto BIOS/UEFI put Secure Boot into Setup Mode. On some 
 # computers (like the GMKtec G3 Plus), you need to set an administrator
@@ -25,7 +27,6 @@ rm /boot/initramfs-linux*
 # - [ ] TODO: Delete all other unverifiable files as well?
 
 ### Automatically sign via mkinitcpio
-
 # `mkinitcpio` will sign some files automatically via a Hook
 mkinitcpio -P
 

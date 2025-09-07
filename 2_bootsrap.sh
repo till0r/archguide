@@ -1,3 +1,5 @@
+#!/bin/bash
+set -euo pipefail
 
 ### Verify the boot mode
 # To verify the boot mode, check the UEFI bitness (should be 64):
@@ -74,14 +76,14 @@ btrfs subvolume create /mnt/@srv
 umount /mnt
 
 # Mount with typical flag (inspired by cachyos)
-mount -o subvol=@,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt
+mount -o subvol=@,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt
 mkdir -p /mnt/{boot,root,home,var/tmp,var/log,var/cache,srv}
-mount -o subvol=@home,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/home
-mount -o subvol=@root,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/root
-mount -o subvol=@srv,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/srv
-mount -o subvol=@cache,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/cache
-mount -o subvol=@tmp,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
-mount -o subvol=@log,defaults,noatime,compress=zstd,commit=120 /dev/mapper/cryptroot /mnt/var/log
+mount -o subvol=@home,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/home
+mount -o subvol=@root,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/root
+mount -o subvol=@srv,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/srv
+mount -o subvol=@cache,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/var/cache
+mount -o subvol=@tmp,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/var/tmp
+mount -o subvol=@log,defaults,noatime,compress=zstd:1,commit=120 /dev/mapper/cryptroot /mnt/var/log
 mkdir -p /mnt/var/cache/pacman/pkg
 mount -o subvol=@pkg,defaults,noatime,compress=no,commit=120 /dev/mapper/cryptroot /mnt/var/cache/pacman/pkg
 
@@ -94,6 +96,7 @@ mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 ### Install essential packages
 pacstrap -K /mnt base linux linux-firmware alsa-utils gpm man-db man-pages vim networkmanager sbctl sudo tpm2-tss openssh pacman-contrib
 pacstrap /mnt intel-ucode
+pacstrap /mnt dosfstools
 
 ### Generate fstab
 genfstab -U /mnt >> /mnt/etc/fstab

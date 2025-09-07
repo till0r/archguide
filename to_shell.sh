@@ -12,6 +12,7 @@ SOURCE_FILE=$1
 
 CODE_STR='```'
 IN_CODE=0
+header=$'#!/bin/bash\nset -euo pipefail\n'
 concatenated=''
 file_name="start"
 file_block=-1
@@ -25,6 +26,7 @@ while IFS= read -r line; do
       file_path="$(pwd)/${file_block}_${file_name}.sh"
       printf '%s' "$concatenated" > "$file_path"
       concatenated=""
+      concatenated+="$header"
     fi
 
     ((file_block++))

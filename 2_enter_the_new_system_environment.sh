@@ -1,3 +1,0 @@
-
-arch-chroot /mnt
-

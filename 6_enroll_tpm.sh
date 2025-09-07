@@ -1,3 +1,5 @@
+#!/bin/bash
+set -euo pipefail
 
 # The following may need root privlidges.
 
@@ -16,6 +18,4 @@ cryptsetup luksDump /dev/nvme0n1p2
 
 ### Reboot
 reboot
-
-# > May whatever God you believe in have mercy on your soul. - Q
 

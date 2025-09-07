@@ -1,3 +1,5 @@
+#!/bin/bash
+set -euo pipefail
 
 ### Disable CoW for /var/cache/pacman/pkg
 # Verification is done by pacman nevertheless.
@@ -12,24 +14,25 @@ hwclock -w
 
 # Add NTP servers:
 mkdir /etc/systemd/timesyncd.conf.d/
-vim /etc/systemd/timesyncd.conf.d/01_ntp.conf
 
-# Example contents:
+tee /etc/systemd/timesyncd.conf.d/01_ntp.conf > /dev/null <<'EOF'
 [Time]
-NTP=0.us.pool.ntp.org 1.us.pool.ntp.org 2.us.pool.ntp.org 3.us.pool.ntp.org
+NTP=0.pool.ntp.org 1.pool.ntp.org 2.pool.ntp.org 3.pool.ntp.org
 FallbackNTP=0.arch.pool.ntp.org 1.arch.pool.ntp.org 2.arch.pool.ntp.org 3.arch.pool.ntp.org
+EOF
 
 ### Localization
 # Use `less /etc/local.gen` to see available options. Uncomment lines with
 # locales en_US.UTF-8 and others in locale.gen
 sed -i '/en_US.UTF-8/s/^#//' /etc/locale.gen
-sed -i '/es_US.UTF-8/s/^#//' /etc/locale.gen
+sed -i '/en_IE.UTF-8/s/^#//' /etc/locale.gen
 
 # Generate locales:
 locale-gen
 
 # Set locale config:
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+echo 'LANG=en_IE.UTF-8' > /etc/locale.conf
+echo 'LC_MESSAGES=en_US.UTF-8' > /etc/locale.conf
 
 ### Network
 echo 'COMPUTERNAME' > /etc/hostname
@@ -53,7 +56,7 @@ sed -i 's|^#fallback_uki="/efi/EFI/Linux/arch-linux-fallback\.efi"|fallback_uki=
 # Create /etc/vconsole.conf
 touch /etc/vconsole.conf
 
-# - [ ] TODO: add us layout
+# - [ ] TODO: explicitly add us layout
 
 ### Install & Configure systemd-boot
 # Install systemd-boot on the EFI partition:
@@ -72,14 +75,8 @@ EOF
 ### Regenerate initial ramdisk
 mkinitcpio -P
 
-### Setup users
-
 ### Set Root password
 passwd
-
-### Make a new user
-useradd -m -G wheel USERNAME
-passwd USERNAME
 
 ### Enable services
 systemctl enable gpm

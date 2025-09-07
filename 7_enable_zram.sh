@@ -1,3 +1,5 @@
+#!/bin/bash
+set -euo pipefail
 
 # Adaption of https://wiki.archlinux.org/title/Zram#Using_a_udev_rule
 # Create dirs (harmless if they already exist)
