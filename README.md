@@ -435,15 +435,16 @@ EOF
 ```
 
 ### Network connection
-Connect to Wi-Fi
+Connect to Wi-Fi - where `SSID` is your SSID
 ```sh
 nmcli device wifi connect SSID password PASSPHRASE
-nmcli con modify SSID con.mdns 1
+nmcli connection modify SSID connection.mdns 2
+nmcli connection modify SSID connection.autoconnect no
 ```
 
 Setup mdns for Wired
 ```sh
-nmcli connection modify "Wired connection 1" connection.mdns 1
+nmcli connection modify "Wired connection 1" connection.mdns 2
 nmcli connection show
 ```
 
@@ -504,7 +505,9 @@ pacman -S pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
 pacman -S gnome-shell gnome-settings-daemon gnome-tweaks gnome-shell-extensions xdg-desktop-portal-gnome gdm
 pacman -S noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-dejavu
 
-pacman -S gnome-control-center gnome-disk-utility gnome-font-viwer gnome-keyring gnome-menus gnome-system-monitor loupe natilus papers papers-lib-docs snapshot sushi ptyxis gnome-browser-connector
+pacman -S gnome-control-center gnome-disk-utility gnome-font-viwer gnome-keyring gnome-menus gnome-system-monitor loupe natilus papers papers-lib-docs snapshot sushi ptyxis gnome-browser-connector gnome-font-viewer
+
+pacman -S ttf-0xproto-nerd
 
 pacman -S --needed power-profiles-daemon
 systemctl enable --now power-profiles-daemon
@@ -526,6 +529,13 @@ sudo sed -i 's/^[#[:space:]]*PasswordAuthentication.*/PasswordAuthentication no/
 
 systemctl enable --now sshd.service
 ```
+
+### Install msmtp
+```sh
+pacman -S msmtp msmtp-mta s-nail
+```
+
+- [ ] Create `config` in `$XDG_CONFIG_HOME/msmtp/` and apply `chmod 600`
 
 ### Install Cockpit
 ```sh
@@ -573,13 +583,14 @@ UUID=$(blkid -s UUID -o value /dev/sda)
 
 `/etc/crypttab`
 ```sh
-cryptmedia0     UUID=973b0b1f-745d-490c-90fd-e5bdcba59954       none    luks,tpm2-device=auto
+cryptmedia0     UUID=973b0b1f-745d-490c-90fd-e5bdcba59954       none    luks,tpm2-device=auto,nofail,timeout=0
 ```
 
 `/etc/fstab`
+Add the drive to fstab and tell the ssystem to not block boot `nofail`, create a systemd automount unit (which we can use to only start certain servies, if the mount point becomes available) and a wait forever for the device, which again is useful for USB disks etc.
 ```sh
 # media0
-/dev/mapper/cryptmedia0 /mnt/media0     ext4            defaults,grpid,nofail                                                  0 2
+/dev/mapper/cryptmedia0 /mnt/media0     ext4            defaults,grpid,nofail,x-systemd.automount,x-systemd.device-timeout=0                                                0 2
 ```
 
 ## Run quadlets
