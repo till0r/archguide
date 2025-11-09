@@ -145,7 +145,7 @@ mount --mkdir -o defaults,umask=0077 /dev/nvme0n1p1 /mnt/boot
 
 ### Install essential packages
 ```sh
-pacstrap -K /mnt base linux linux-firmware alsa-utils gpm man-db man-pages vim networkmanager sbctl sudo tpm2-tss openssh pacman-contrib
+pacstrap -K /mnt base linux linux-firmware alsa-utils gpm man-db man-pages vim networkmanager sbctl sudo tpm2-tss openssh pacman-contrib git
 pacstrap /mnt intel-ucode
 pacstrap /mnt dosfstools
 ```
