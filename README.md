@@ -253,8 +253,7 @@ This step is necessary, because we put `.` into a subvolume (`\@`) and `/etc/fst
 UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)
 
 cat <<EOF | tee /etc/kernel/cmdline > /dev/null
-root=/dev/mapper/cryptroot rw rootflags=subvol=@,defaults,noatime,compress=zstd,commit=120
-rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet
+root=/dev/mapper/cryptroot rw rootflags=subvol=@,defaults,noatime,compress=zstd,commit=120 rd.luks.uuid=$UUID rd.luks.name=$UUID=cryptroot quiet libata.allow_tpm=1
 EOF
 ```
 
@@ -569,10 +568,22 @@ rfkill block bluetooth
 ```
 
 ## Add more encrypted disks
+If we aim to encrypt the entire disk, we do not need to use `sgdisk` to create a partition. That's why in the following there is no partition specifier used.
+Note, that `--hw-opal-only` cannot be used with USB disks - `sedutil` can be used for that, but at the sake of comfort.
+```sh
+sudo cryptsetup -v luksFormat --type luks2 --hw-opal-only /dev/sda
+sudo cryptsetup open /dev/sda cryptmedia0
+```
+
+The partition needs to be formatted.
+```sh
+sudo mkfs.ext4 /dev/mapper/cryptmedia0
+```
+
 The following setup will ensure that all users in `wheel` have access to the data.
 ```sh
 sudo mkdir -p /mnt/media0
-sudo chown root:wheel /mnt/media0
+sudo chown till:wheel /mnt/media0
 sudo chmod 2770 /mnt/media0    # 2 = setgid; ensures group inheritance for newly created files and directories
 
 sudo systemd-cryptenroll /dev/sda --wipe-slot=empty --tpm2-device=auto
