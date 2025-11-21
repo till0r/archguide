@@ -79,10 +79,10 @@ sgdisk --zap-all /dev/nvme0n1
 ```
 
 ### Partition the disks
-Use a partitioning tool like fdisk to modify partition tables:
+Use a partitioning tool like fdisk to modify partition tables - `--new` will implicitly create a new GPT partition table:
 ```sh
-# Create EFI partition: 4 GiB, starting at default first sector
-sgdisk --new=1:0:+4G --typecode=1:ef00 /dev/nvme0n1
+# Create EFI partition: 16 GiB, starting at default first sector
+sgdisk --new=1:0:+16G --typecode=1:ef00 /dev/nvme0n1
 
 # Create Linux root partition: uses remaining space
 sgdisk --new=2:0:0 --typecode=2:8304 /dev/nvme0n1
@@ -535,6 +535,11 @@ pacman -S msmtp msmtp-mta s-nail
 ```
 
 - [ ] Create `config` in `$XDG_CONFIG_HOME/msmtp/` and apply `chmod 600`
+
+Test msmtp config.
+```sh
+printf "To: test@example.org\nSubject: msmtp test\n\nBody\n" | msmtp -a default -t
+```
 
 ### Install Cockpit
 ```sh
