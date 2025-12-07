@@ -589,7 +589,7 @@ The following setup will ensure that all users in `wheel` have access to the dat
 ```sh
 sudo mkdir -p /mnt/media0
 sudo chown till:wheel /mnt/media0
-sudo chmod 2770 /mnt/media0    # 2 = setgid; ensures group inheritance for newly created files and directories
+chmod 2770 /mnt/media0    # 2 = setgid; ensures group inheritance for newly created files and directories (notice no longer sudo)
 
 sudo systemd-cryptenroll /dev/sda --wipe-slot=empty --tpm2-device=auto
 
