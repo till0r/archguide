@@ -543,7 +543,7 @@ printf "To: test@example.org\nSubject: msmtp test\n\nBody\n" | msmtp -a default 
 
 ### Install Cockpit
 ```sh
-pacman -S cockpit cockpit-podman cockpit-storaged cockpit-packagekit
+pacman -S cockpit cockpit-podman cockpit-storaged cockpit-packagekit udisks2-btrfs udisks2-docs udisks2-lvm2
 ```
 
 ```sh
